@@ -469,6 +469,8 @@ function loadGames() {
 function saveGames() { localStorage.setItem(STORAGE_KEY, JSON.stringify(games)); }
 
 // ==================== COVER URL ====================
+let coverCache = {};
+
 function getCoverUrl(appId) {
   if (!appId || !/^\d+$/.test(String(appId).trim())) return '';
   return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
@@ -476,6 +478,52 @@ function getCoverUrl(appId) {
 function getCoverFallback(appId) {
   if (!appId || !/^\d+$/.test(String(appId).trim())) return '';
   return `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`;
+}
+
+function coverOnError(img) {
+  const appId = img.dataset.appid;
+  if (!appId) { img.style.display = 'none'; return; }
+  const fbIdx = parseInt(img.dataset.fallback || '0');
+  const fallbacks = [
+    `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`,
+    `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`,
+    `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`,
+  ];
+  if (fbIdx < fallbacks.length) {
+    img.src = fallbacks[fbIdx];
+    img.dataset.fallback = String(fbIdx + 1);
+    return;
+  }
+  // All CDN fallbacks exhausted — try Steam store API for new-style covers
+  if (coverCache[appId]) { img.src = coverCache[appId]; return; }
+  if (img.dataset.resolving === '1') return;
+  img.dataset.resolving = '1';
+  resolveCoverViaApi(appId).then(url => {
+    if (url) { img.src = url; coverCache[appId] = url; }
+    else { img.style.display = 'none'; if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex'; }
+  });
+}
+
+async function resolveCoverViaApi(appId) {
+  const storeUrl = `https://store.steampowered.com/api/appdetails?appids=${appId}&l=zh-CN`;
+  const urls = [
+    `https://corsproxy.io/?${encodeURIComponent(storeUrl)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(storeUrl)}`,
+    `https://cors-anywhere-rose.vercel.app/${storeUrl}`,
+  ];
+  for (const url of urls) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 8000);
+      const resp = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      const header = data?.[appId]?.data?.header_image;
+      if (header) return header;
+    } catch (e) { continue; }
+  }
+  return null;
 }
 function extractAppId(input) {
   if (!input) return null;
@@ -734,7 +782,8 @@ function render() {
         <div class="game-card">
           <div class="card-cover">
             ${cover ? `<img src="${cover}" alt="${g.name}" loading="lazy"
-              onerror="this.src='${fb}';this.onerror=()=>{this.style.display='none';this.nextElementSibling.style.display='flex';}"
+              data-appid="${g.appId}" data-fallback="0"
+              onerror="coverOnError(this)"
             >` : ''}
             <span class="fallback-icon" style="${cover?'display:none':'display:flex'}">🎮</span>
             ${g.rating > 0 ? `<div class="rating-badge ${rCls}">⭐ ${g.rating.toFixed(1)}</div>` : ''}
@@ -805,8 +854,10 @@ function openGameModal(gameId) {
       updateRatingDisplay();
       const preview = document.getElementById('coverPreview');
       if (g.appId) {
-        preview.innerHTML = `<img src="${getCoverUrl(g.appId)}" alt="${g.name}" loading="lazy"
-          onerror="this.src='${getCoverFallback(g.appId)}';this.onerror=()=>{this.parentElement.innerHTML='<span class=placeholder>⚠️ 封面加载失败</span>';}">`;
+        const coverUrl = coverCache[g.appId] || getCoverUrl(g.appId);
+        preview.innerHTML = `<img src="${coverUrl}" alt="${g.name}" loading="lazy"
+          data-appid="${g.appId}" data-fallback="0"
+          onerror="coverOnError(this)">`;
       }
     }
   } else {
@@ -897,7 +948,8 @@ function openBatchResolve() {
   document.getElementById('batchTbody').innerHTML = unresolved.map(g => `
     <tr data-id="${g.id}">
       <td><img src="${getCoverUrl(g.appId)}" loading="lazy"
-        onerror="this.src='${getCoverFallback(g.appId)}';this.onerror=()=>{this.alt='🎮';}"></td>
+        data-appid="${g.appId}" data-fallback="0"
+        onerror="coverOnError(this)"></td>
       <td style="color:var(--text-muted);font-family:monospace">${g.appId}</td>
       <td><input type="text" value="" placeholder="输入游戏名称"></td>
     </tr>
@@ -949,7 +1001,8 @@ async function onCoverInput() {
   if (appId) {
     appIdHidden.value = appId;
     preview.innerHTML = `<img src="${getCoverUrl(appId)}" alt="封面" loading="lazy"
-      onerror="this.src='${getCoverFallback(appId)}';this.onerror=()=>{this.parentElement.innerHTML='<span class=placeholder>⚠️ 无法加载封面</span>';}">`;
+      data-appid="${appId}" data-fallback="0"
+      onerror="coverOnError(this)">`;
     results.style.display = 'none';
     return;
   }
@@ -995,7 +1048,8 @@ function selectSearchResult(appId, name) {
   if (!document.getElementById('gameName').value) document.getElementById('gameName').value = name;
   const preview = document.getElementById('coverPreview');
   preview.innerHTML = `<img src="${getCoverUrl(appId)}" alt="${name}" loading="lazy"
-    onerror="this.src='${getCoverFallback(appId)}';this.onerror=()=>{this.parentElement.innerHTML='<span class=placeholder>⚠️ 封面加载失败</span>';}">`;
+    data-appid="${appId}" data-fallback="0"
+    onerror="coverOnError(this)">`;
   document.getElementById('searchResults').style.display = 'none';
 }
 
