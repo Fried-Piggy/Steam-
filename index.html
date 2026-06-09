@@ -510,6 +510,9 @@ async function resolveCoverViaApi(appId) {
     `https://corsproxy.io/?${encodeURIComponent(storeUrl)}`,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(storeUrl)}`,
     `https://cors-anywhere-rose.vercel.app/${storeUrl}`,
+    `https://proxy.cors.sh/${storeUrl}`,
+    `https://cors.eu.org/${storeUrl}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(storeUrl)}`,
   ];
   for (const url of urls) {
     try {
@@ -1000,7 +1003,8 @@ async function onCoverInput() {
 
   if (appId) {
     appIdHidden.value = appId;
-    preview.innerHTML = `<img src="${getCoverUrl(appId)}" alt="封面" loading="lazy"
+    const coverSrc = coverCache[appId] || getCoverUrl(appId);
+    preview.innerHTML = `<img src="${coverSrc}" alt="封面" loading="lazy"
       data-appid="${appId}" data-fallback="0"
       onerror="coverOnError(this)">`;
     results.style.display = 'none';
@@ -1047,7 +1051,8 @@ function selectSearchResult(appId, name) {
   document.getElementById('gameAppId').value = appId;
   if (!document.getElementById('gameName').value) document.getElementById('gameName').value = name;
   const preview = document.getElementById('coverPreview');
-  preview.innerHTML = `<img src="${getCoverUrl(appId)}" alt="${name}" loading="lazy"
+  const coverSrc = coverCache[appId] || getCoverUrl(appId);
+  preview.innerHTML = `<img src="${coverSrc}" alt="${name}" loading="lazy"
     data-appid="${appId}" data-fallback="0"
     onerror="coverOnError(this)">`;
   document.getElementById('searchResults').style.display = 'none';
