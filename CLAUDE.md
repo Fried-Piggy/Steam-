@@ -1,68 +1,47 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+这是一份供代码助手快速理解项目的背景说明，不是强制执行清单；项目的实际行为以代码、测试和 `README.md` 为准。
 
-## Project overview
+## 项目概览
 
-Single-file HTML application (`index.html`) — a personal Steam game library showcase. No build tools, no dependencies, no server. Open the file directly in a browser to use.
+Steam 游戏陈列库是一个原生 Web 应用。它没有 npm 运行依赖，但需要 Node.js 20+ 启动本地静态服务与 Steam API 转发：
 
-## How to preview
-
-```bash
-start index.html          # Windows: open in default browser
-# or
-python3 -m http.server 8080  # serve on localhost:8080
+```powershell
+npm.cmd start
+npm.cmd run check
 ```
 
-## Architecture
+访问 `http://127.0.0.1:4173`，不要直接打开 `index.html`。
 
-Everything lives in `index.html`: CSS variables for theming (dark Steam-like palette), vanilla JS for logic, no frameworks.
+## 架构边界
 
-### Data layer
+- `src/domain.js`：纯领域逻辑；不得访问 DOM、网络或浏览器存储。
+- `src/storage.js`：版本化持久化、旧数据迁移和 JSON 备份。
+- `src/steam.js`：浏览器到同源 `/api/steam/*` 的请求。
+- `src/app.js`：DOM 渲染、事件绑定和异步流程编排。
+- `server.mjs`：静态文件白名单、安全响应头、Steam 官方接口转发。
+- `data/default-library.json`：首次访问时载入的默认库。
 
-- **Storage**: `localStorage` key `steam_game_library_v2`
-- **Game object shape**:
-  ```js
-  { id: string, name: string, appId: string, genre: string,
-    rating: number (0-5), review: string, addedAt: timestamp }
-  ```
-- `id` for manually-added games: `Date.now().toString(36) + random`
-- `id` for Steam-imported games: `"steam_" + appId`
-- Deduplication at import time checks both `id` and `appId`
+新增可复用逻辑时优先放入领域层，并为它补充 `node:test` 测试。不要把用户可控文本写入 `innerHTML`，不要持久化或记录 Steam API Key，也不要恢复公共 CORS 代理链。
 
-### Key JS modules (all in `<script>` at bottom of index.html)
+## 数据模型
 
-| Section | Functions | Purpose |
-|---------|-----------|---------|
-| DATA | `loadGames()`, `saveGames()` | localStorage read/write |
-| COVER URL | `getCoverUrl()`, `getCoverFallback()`, `extractAppId()` | Steam CDN cover images, App ID extraction from store URLs |
-| VDF PARSER | `parseVDF()`, `handleVdfFile()`, `startVdfNameResolver()`, `resolveGameName()` | Parse Valve KeyValues format to extract App IDs, background name resolution via CORS proxies |
-| RENDER | `render()` | Full re-render: stats bar, genre filter, game grid cards, empty states |
-| GAME MODAL | `openGameModal()`, `saveGame()`, `deleteGame()` | Add/edit/delete single game |
-| STEAM SEARCH | `onCoverInput()`, `searchSteam()`, `selectSearchResult()` | Auto-extract App ID from pasted URL, debounced search via `steamcommunity.com/actions/SearchApps` |
-| API SYNC | `syncFromAPI()`, `apiManualImport()` | Steam Web API `GetOwnedGames` with CORS proxy fallback chain |
-| EXPORT/IMPORT | `exportData()`, `importData()` | JSON file export/download and import with dedup |
+```js
+{
+  id: string,
+  name: string,
+  appId: string,
+  genre: string,
+  rating: number, // 0 到 10，0 表示未评分
+  review: string,
+  addedAt: number
+}
+```
 
-### External endpoints used
-
-| Endpoint | CORS? | Usage |
-|----------|-------|-------|
-| `cdn.cloudflare.steamstatic.com/steam/apps/{id}/header.jpg` | N/A (image) | Primary cover image |
-| `shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{id}/header.jpg` | N/A (image) | Fallback cover |
-| `steamcommunity.com/actions/SearchApps/{query}` | Yes | Game name search in cover input |
-| `store.steampowered.com/api/appdetails?appids={id}` | No | Name resolution (via CORS proxies) |
-| `api.steampowered.com/IPlayerService/GetOwnedGames/v1/` | No | Steam library sync (via CORS proxies) |
-
-CORS proxies tried in order: `corsproxy.io`, `api.allorigins.win`, `cors-anywhere-rose.vercel.app`. All may fail in China without VPN.
-
-## VDF import (Steam local files)
-
-The recommended import path. User selects `localconfig.vdf` or `sharedconfig.vdf` from their Steam install (`Steam/userdata/<id>/config/`). The parser uses regex patterns (`/"(\d{3,7})"\s*\{/g`) to find Steam App IDs, then imports them as placeholder entries. Cover images load immediately from CDN. Names are resolved asynchronously in the background via the store API with rate limiting (5 at a time, 500ms delay between batches).
+浏览器存储键为 `steam_game_library_v4`。`storage.js` 会自动迁移 v2/v3；导入备份时同时兼容旧数组和新的版本化对象。
 
 ## Git
 
-- **Remote**: `git@github.com:Fried-Piggy/Steam-.git` (SSH)
-- **Branch**: `master` → `origin/main`
-- **User**: Fried-Piggy (piggy809192079@gmail.com)
-- Push: `git add -A && git commit -m "..." && git push`
-- HTTPS to GitHub is blocked; SSH on port 22 works
+- Remote：`git@github.com:Fried-Piggy/Steam-.git`
+- GitHub 用户：`Fried-Piggy`
+- 使用 SSH，不在命令或文档中放置 Token、密码或密钥。

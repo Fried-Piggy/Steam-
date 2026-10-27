@@ -1,0 +1,809 @@
+[
+  {
+    "id": "steam_1435790",
+    "name": "密室逃脱模拟器",
+    "appId": "1435790",
+    "genres": [
+      "解谜"
+    ],
+    "cardTheme": "解谜",
+    "rating": 8.6,
+    "tier": "SR",
+    "manualOrder": 16,
+    "review": "糖水解密游戏，畅享一切密室题材，无功无过",
+    "addedAt": 1780989822369
+  },
+  {
+    "id": "steam_774181",
+    "name": "节奏医生",
+    "appId": "774181",
+    "genres": [
+      "节奏"
+    ],
+    "cardTheme": "节奏",
+    "rating": 8.4,
+    "tier": "R",
+    "manualOrder": 34,
+    "review": "个人更喜欢类节奏天国",
+    "addedAt": 1780989822383
+  },
+  {
+    "id": "steam_210970",
+    "name": "The Witness",
+    "appId": "210970",
+    "genres": [
+      "解谜"
+    ],
+    "cardTheme": "解谜",
+    "rating": 8.9,
+    "tier": "SR",
+    "manualOrder": 31,
+    "review": "给了我好多的震撼，但是太难了通关不了",
+    "addedAt": 1780989822383
+  },
+  {
+    "id": "steam_242760",
+    "name": "The Forest",
+    "appId": "242760",
+    "genres": [
+      "恐怖",
+      "生存",
+      "多人合作"
+    ],
+    "cardTheme": "多人合作",
+    "rating": 8.7,
+    "tier": "R",
+    "manualOrder": 39,
+    "review": "不喜欢恐怖，但剧情很好",
+    "addedAt": 1780989822383
+  },
+  {
+    "id": "steam_322330",
+    "name": "饥荒",
+    "appId": "322330",
+    "genres": [
+      "生存",
+      "多人合作",
+      "探索向"
+    ],
+    "cardTheme": "多人合作",
+    "rating": 8.6,
+    "tier": "R",
+    "manualOrder": 40,
+    "review": "好难",
+    "addedAt": 1780989822383
+  },
+  {
+    "id": "steam_578080",
+    "name": "PUBG",
+    "appId": "578080",
+    "genres": [
+      "大型多人在线"
+    ],
+    "cardTheme": "",
+    "rating": 8,
+    "tier": "N",
+    "manualOrder": 42,
+    "review": "无功无过",
+    "addedAt": 1780989822383
+  },
+  {
+    "id": "steam_774171",
+    "name": "Muse Dash",
+    "appId": "774171",
+    "genres": [
+      "节奏"
+    ],
+    "cardTheme": "节奏",
+    "rating": 4.9,
+    "tier": "F",
+    "manualOrder": 51,
+    "review": "无聊",
+    "addedAt": 1780989822383
+  },
+  {
+    "id": "steam_939400",
+    "name": "拣爱",
+    "appId": "939400",
+    "genres": [
+      "视觉小说"
+    ],
+    "cardTheme": "视觉小说",
+    "rating": 9.4,
+    "tier": "SR",
+    "manualOrder": 14,
+    "review": "原来，爱还有另一层含义",
+    "addedAt": 1780989822383
+  },
+  {
+    "id": "steam_976010",
+    "name": "I hate this game",
+    "appId": "976010",
+    "genres": [
+      "解谜"
+    ],
+    "cardTheme": "解谜",
+    "rating": 7.2,
+    "tier": "F",
+    "manualOrder": 54,
+    "review": "有巧思但不多",
+    "addedAt": 1780989822383
+  },
+  {
+    "id": "steam_1206610",
+    "name": "Rubber Bandits",
+    "appId": "1206610",
+    "genres": [
+      "多人合作"
+    ],
+    "cardTheme": "多人合作",
+    "rating": 6.5,
+    "tier": "F",
+    "manualOrder": 53,
+    "review": "垃圾",
+    "addedAt": 1780989822383
+  },
+  {
+    "id": "steam_1568590",
+    "name": "鹅鸭杀",
+    "appId": "1568590",
+    "genres": [
+      "大型多人在线"
+    ],
+    "cardTheme": "",
+    "rating": 8.5,
+    "tier": "R",
+    "manualOrder": 35,
+    "review": "好玩！",
+    "addedAt": 1780989822394
+  },
+  {
+    "id": "steam_1585220",
+    "name": "Melatonin（褪黑素）",
+    "appId": "1585220",
+    "genres": [
+      "节奏"
+    ],
+    "cardTheme": "节奏",
+    "rating": 8.4,
+    "tier": "SR",
+    "manualOrder": 28,
+    "review": "和节奏天国比相形见绌，但画风唯美",
+    "addedAt": 1780989822394
+  },
+  {
+    "id": "steam_1624540",
+    "name": "Storyteller",
+    "appId": "1624540",
+    "genres": [
+      "解谜"
+    ],
+    "cardTheme": "解谜",
+    "rating": 8.4,
+    "tier": "SR",
+    "manualOrder": 29,
+    "review": "有创意有小巧思\n但某些关需要重复试错，提示不明显",
+    "addedAt": 1780989822394
+  },
+  {
+    "id": "steam_1966720",
+    "name": "致命公司",
+    "appId": "1966720",
+    "genres": [
+      "恐怖",
+      "多人合作"
+    ],
+    "cardTheme": "多人合作",
+    "rating": 9.4,
+    "tier": "SR",
+    "manualOrder": 22,
+    "review": "玩得最久的多人游戏",
+    "addedAt": 1780989822394
+  },
+  {
+    "id": "steam_2200650",
+    "name": "Bits & Bops",
+    "appId": "2200650",
+    "genres": [
+      "节奏"
+    ],
+    "cardTheme": "节奏",
+    "rating": 9.5,
+    "tier": "SSR",
+    "manualOrder": 6,
+    "review": "类节奏天国的神，太好玩了，画风、关卡、音乐都神！",
+    "addedAt": 1780989822394
+  },
+  {
+    "id": "steam_2379780",
+    "name": "小丑牌",
+    "appId": "2379780",
+    "genres": [
+      "肉鸽",
+      "卡牌"
+    ],
+    "cardTheme": "肉鸽",
+    "rating": 9.4,
+    "tier": "SR",
+    "manualOrder": 21,
+    "review": "肉鸽的神，几十MB玩30h+",
+    "addedAt": 1780989822394
+  },
+  {
+    "id": "steam_461950",
+    "name": "Beat Cop",
+    "appId": "461950",
+    "genres": [
+      "其他"
+    ],
+    "cardTheme": "",
+    "rating": 7.3,
+    "tier": "C",
+    "manualOrder": 46,
+    "review": "无聊",
+    "addedAt": 1780989822394
+  },
+  {
+    "id": "steam_1012880",
+    "name": "60秒生存",
+    "appId": "1012880",
+    "genres": [
+      "生存"
+    ],
+    "cardTheme": "",
+    "rating": 2.5,
+    "tier": "F",
+    "manualOrder": 49,
+    "review": "无聊",
+    "addedAt": 1780989822404
+  },
+  {
+    "id": "steam_1092790",
+    "name": "邪恶冥刻",
+    "appId": "1092790",
+    "genres": [
+      "解谜",
+      "肉鸽"
+    ],
+    "cardTheme": "肉鸽",
+    "rating": 9.8,
+    "tier": "UR",
+    "manualOrder": 2,
+    "review": "剧情和玩法都无敌",
+    "addedAt": 1780989822404
+  },
+  {
+    "id": "steam_3314790",
+    "name": "CLOVERPIT（幸运草深渊）",
+    "appId": "3314790",
+    "genres": [
+      "肉鸽"
+    ],
+    "cardTheme": "肉鸽",
+    "rating": 8.4,
+    "tier": "R",
+    "manualOrder": 36,
+    "review": "一开始很惊艳，玩多了觉得所犯乏味",
+    "addedAt": 1780989822404
+  },
+  {
+    "id": "steam_753640",
+    "name": "星际拓荒",
+    "appId": "753640",
+    "genres": [
+      "解谜",
+      "探索向"
+    ],
+    "cardTheme": "解谜",
+    "rating": 10,
+    "tier": "UR",
+    "manualOrder": 0,
+    "review": "28万年的宇宙，三个文明在不同时空的交映。宇宙浪漫，星河静谧，何不烤个棉花糖，吹着口哨，安然入眠。",
+    "addedAt": 1780989822404
+  },
+  {
+    "id": "steam_1931770",
+    "name": "巴别塔圣歌",
+    "appId": "1931770",
+    "genres": [
+      "解谜",
+      "探索向"
+    ],
+    "cardTheme": "解谜",
+    "rating": 9.9,
+    "tier": "UR",
+    "manualOrder": 1,
+    "review": "语言不是文明间的阻碍，人心中的成见才是。",
+    "addedAt": 1780989822404
+  },
+  {
+    "id": "steam_1497440",
+    "name": "Cocoon（茧）",
+    "appId": "1497440",
+    "genres": [
+      "解谜"
+    ],
+    "cardTheme": "解谜",
+    "rating": 9.5,
+    "tier": "SSR",
+    "manualOrder": 8,
+    "review": "伟大的idea，绝美的画风，极致的解谜",
+    "addedAt": 1780989822404
+  },
+  {
+    "id": "steam_1426210",
+    "name": "双人成行",
+    "appId": "1426210",
+    "genres": [
+      "解谜",
+      "多人合作"
+    ],
+    "cardTheme": "多人合作",
+    "rating": 9.5,
+    "tier": "SSR",
+    "manualOrder": 5,
+    "review": "和妹一起玩的第一个大型游戏，对双人合作机制的解谜诠释得淋漓尽致，各种场景都好美！",
+    "addedAt": 1780989822415
+  },
+  {
+    "id": "steam_1055540",
+    "name": "A Short Hike",
+    "appId": "1055540",
+    "genres": [
+      "冒险",
+      "探索向"
+    ],
+    "cardTheme": "探索向",
+    "rating": 8.6,
+    "tier": "SR",
+    "manualOrder": 23,
+    "review": "和TOEM一样都是放松旅行的佳作",
+    "addedAt": 1780989822415
+  },
+  {
+    "id": "steam_557600",
+    "name": "GOROGOA",
+    "appId": "557600",
+    "genres": [
+      "解谜"
+    ],
+    "cardTheme": "解谜",
+    "rating": 9.2,
+    "tier": "SR",
+    "manualOrder": 26,
+    "review": "非常巧妙，短小精悍",
+    "addedAt": 1780989822415
+  },
+  {
+    "id": "steam_1475840",
+    "name": "Rhythm Sprout",
+    "appId": "1475840",
+    "genres": [
+      "节奏"
+    ],
+    "cardTheme": "节奏",
+    "rating": 6.8,
+    "tier": "C",
+    "manualOrder": 44,
+    "review": "一般",
+    "addedAt": 1780989822415
+  },
+  {
+    "id": "steam_461040",
+    "name": "Pico Park",
+    "appId": "461040",
+    "genres": [
+      "解谜",
+      "多人合作"
+    ],
+    "cardTheme": "多人合作",
+    "rating": 8.3,
+    "tier": "R",
+    "manualOrder": 37,
+    "review": "",
+    "addedAt": 1780989822415
+  },
+  {
+    "id": "steam_1746030",
+    "name": "山河旅探",
+    "appId": "1746030",
+    "genres": [
+      "解谜",
+      "视觉小说"
+    ],
+    "cardTheme": "视觉小说",
+    "rating": 9.1,
+    "tier": "SR",
+    "manualOrder": 20,
+    "review": "剧情满分，层层转折，家国之魂",
+    "addedAt": 1780989822415
+  },
+  {
+    "id": "steam_2868840",
+    "name": "杀戮尖塔Ⅱ",
+    "appId": "2868840",
+    "genres": [
+      "肉鸽"
+    ],
+    "cardTheme": "肉鸽",
+    "rating": 9.4,
+    "tier": "SR",
+    "manualOrder": 19,
+    "review": "虽然安东尼是石，但是游戏本身很上瘾",
+    "addedAt": 1780989822415
+  },
+  {
+    "id": "steam_1307580",
+    "name": "TOEM",
+    "appId": "1307580",
+    "genres": [
+      "冒险",
+      "解谜",
+      "探索向"
+    ],
+    "cardTheme": "探索向",
+    "rating": 8.6,
+    "tier": "SR",
+    "manualOrder": 32,
+    "review": "旅拍模拟器，氛围活跃轻松",
+    "addedAt": 1780989822415
+  },
+  {
+    "id": "steam_2721890",
+    "name": "Ooo",
+    "appId": "2721890",
+    "genres": [
+      "解谜",
+      "2D类银河恶魔城"
+    ],
+    "cardTheme": "2D类银河恶魔城",
+    "rating": 9.8,
+    "tier": "SSR",
+    "manualOrder": 7,
+    "review": "太巧妙了，把一个点子玩出花了，解谜难度适中又给人层层惊喜",
+    "addedAt": 1780989822415
+  },
+  {
+    "id": "steam_3300800",
+    "name": "Her Trees",
+    "appId": "3300800",
+    "genres": [
+      "解谜"
+    ],
+    "cardTheme": "解谜",
+    "rating": 9.3,
+    "tier": "SR",
+    "manualOrder": 27,
+    "review": "非常巧妙唯美的解谜，把拼图玩出花",
+    "addedAt": 1780989822427
+  },
+  {
+    "id": "steam_1629520",
+    "name": "A Little to the Left",
+    "appId": "1629520",
+    "genres": [
+      "解谜"
+    ],
+    "cardTheme": "解谜",
+    "rating": 6,
+    "tier": "C",
+    "manualOrder": 47,
+    "review": "比较无聊，及格线水准",
+    "addedAt": 1780989822427
+  },
+  {
+    "id": "steam_638230",
+    "name": "Journey",
+    "appId": "638230",
+    "genres": [
+      "解谜",
+      "多人合作",
+      "探索向"
+    ],
+    "cardTheme": "探索向",
+    "rating": 9.7,
+    "tier": "SSR",
+    "manualOrder": 10,
+    "review": "路过的旅人，真的是屏幕另一端的，生命中的过客。全程一直在微笑",
+    "addedAt": 1780989822427
+  },
+  {
+    "id": "steam_1332010",
+    "name": "Stray",
+    "appId": "1332010",
+    "genres": [
+      "解谜",
+      "视觉小说",
+      "探索向"
+    ],
+    "cardTheme": "解谜",
+    "rating": 9.4,
+    "tier": "SSR",
+    "manualOrder": 11,
+    "review": "结尾给人一种怅然若失的感觉，猫猫+科幻题材新颖",
+    "addedAt": 1780989822427
+  },
+  {
+    "id": "steam_1057090",
+    "name": "Ori",
+    "appId": "1057090",
+    "genres": [
+      "冒险",
+      "探索向",
+      "2D类银河恶魔城"
+    ],
+    "cardTheme": "2D类银河恶魔城",
+    "rating": 8.2,
+    "tier": "N",
+    "manualOrder": 41,
+    "review": "画风可以，但比较无聊，没有让人惊艳",
+    "addedAt": 1780989822427
+  },
+  {
+    "id": "steam_648800",
+    "name": "Raft",
+    "appId": "648800",
+    "genres": [
+      "生存",
+      "多人合作"
+    ],
+    "cardTheme": "多人合作",
+    "rating": 6,
+    "tier": "F",
+    "manualOrder": 52,
+    "review": "无聊，大部分时间在刷物资。",
+    "addedAt": 1780989822438
+  },
+  {
+    "id": "steam_1644940",
+    "name": "Loddlenaut",
+    "appId": "1644940",
+    "genres": [
+      "冒险",
+      "探索向"
+    ],
+    "cardTheme": "探索向",
+    "rating": 7.5,
+    "tier": "C",
+    "manualOrder": 45,
+    "review": "保护海洋~画风可爱",
+    "addedAt": 1780989822438
+  },
+  {
+    "id": "steam_1568400",
+    "name": "Sheepy",
+    "appId": "1568400",
+    "genres": [
+      "2D类银河恶魔城"
+    ],
+    "cardTheme": "2D类银河恶魔城",
+    "rating": 8.3,
+    "tier": "N",
+    "manualOrder": 43,
+    "review": "手柄体验良好",
+    "addedAt": 1780989822438
+  },
+  {
+    "id": "steam_1395520",
+    "name": "Eldritch House",
+    "appId": "1395520",
+    "genres": [
+      "解谜"
+    ],
+    "cardTheme": "解谜",
+    "rating": 8.4,
+    "tier": "C",
+    "manualOrder": 48,
+    "review": "是个佳作，但类奥伯拉丁的游戏我真的玩不下去",
+    "addedAt": 1780989822438
+  },
+  {
+    "id": "steam_1943950",
+    "name": "逃离后室",
+    "appId": "1943950",
+    "genres": [
+      "解谜",
+      "多人合作",
+      "探索向"
+    ],
+    "cardTheme": "多人合作",
+    "rating": 3.6,
+    "tier": "F",
+    "manualOrder": 50,
+    "review": "垃圾",
+    "addedAt": 1780989822438
+  },
+  {
+    "id": "steam_874260",
+    "name": "遗忘之城",
+    "appId": "874260",
+    "genres": [
+      "解谜",
+      "探索向"
+    ],
+    "cardTheme": "解谜",
+    "rating": 9.8,
+    "tier": "SSR",
+    "manualOrder": 3,
+    "review": "真的好爱这种星际拓荒式的游戏，每一步抽丝剥茧，最后发现惊天大秘密！神秘的氛围，绝妙的剧情，丰富的人物~",
+    "addedAt": 1790672736374
+  },
+  {
+    "id": "steam_1082430",
+    "name": "历历在目（Before Your Eyes）",
+    "appId": "1082430",
+    "genres": [
+      "视觉小说"
+    ],
+    "cardTheme": "视觉小说",
+    "rating": 9.2,
+    "tier": "SR",
+    "manualOrder": 15,
+    "review": "通过“眨眼”动作捕捉这个游戏界从未出现过的新机制，来推进剧情。但奈何我眼睛玩得不舒服，所以还是关闭了这个功能。\n一个平凡的、早夭的男孩亡魂，向摆渡者编造了一个绚烂的人生。但最后，摆渡者教会了他，属于他自己的平凡人生，也是值得感动流泪、意义非凡的。",
+    "addedAt": 1790672736377
+  },
+  {
+    "id": "steam_1141580",
+    "name": "TAIJI",
+    "appId": "1141580",
+    "genres": [
+      "解谜"
+    ],
+    "cardTheme": "解谜",
+    "rating": 8.9,
+    "tier": "SR",
+    "manualOrder": 30,
+    "review": "类似The Witness的环境解谜游戏。思路灵巧，有许多地方让人眼前一亮，地图设计也很不错。但某些主题的解谜纯粹是试错，有些无聊枯燥。",
+    "addedAt": 1790672736378
+  },
+  {
+    "id": "steam_1269950",
+    "name": "Buddy Simulator 1984",
+    "appId": "1269950",
+    "genres": [
+      "角色扮演",
+      "解谜",
+      "探索向"
+    ],
+    "cardTheme": "探索向",
+    "rating": 9.3,
+    "tier": "SR",
+    "manualOrder": 24,
+    "review": "从开始的老式计算机，到2D、2.5D，最后3D，真的很惊艳",
+    "addedAt": 1790672736379
+  },
+  {
+    "id": "steam_1478500",
+    "name": "Big Walk",
+    "appId": "1478500",
+    "genres": [
+      "解谜",
+      "多人合作",
+      "探索向"
+    ],
+    "cardTheme": "多人合作",
+    "rating": 9.7,
+    "tier": "SSR",
+    "manualOrder": 4,
+    "review": "太伟大了，一开始一度玩不下去，但后来慢慢领悟到了游戏传递的理念，和朋友一起的默契。最后进黑球玩boss关，真的进入心流了，大家凭借前期关卡积攒的默契，在无法说话的情况下一步步破解谜题。最终在栈桥与朋友一个个送别的过程也让人泪目",
+    "addedAt": 1790672736380
+  },
+  {
+    "id": "steam_1671210",
+    "name": "Deltarune",
+    "appId": "1671210",
+    "genres": [
+      "视觉小说"
+    ],
+    "cardTheme": "视觉小说",
+    "rating": 9.4,
+    "tier": "SR",
+    "manualOrder": 25,
+    "review": "还没玩好，但是里面的人物都很真诚烂漫。",
+    "addedAt": 1790672736381
+  },
+  {
+    "id": "steam_2951770",
+    "name": "闰跃之年",
+    "appId": "2951770",
+    "genres": [
+      "解谜",
+      "2D类银河恶魔城"
+    ],
+    "cardTheme": "2D类银河恶魔城",
+    "rating": 9.4,
+    "tier": "SR",
+    "manualOrder": 17,
+    "review": "和Ooo是同一类型的作品，一步步发现跳跃逻辑，很引人入胜，将跳跃机制玩到了极致",
+    "addedAt": 1790672736386
+  },
+  {
+    "id": "steam_3121470",
+    "name": "色度零",
+    "appId": "3121470",
+    "genres": [
+      "解谜"
+    ],
+    "cardTheme": "解谜",
+    "rating": 8.6,
+    "tier": "SR",
+    "manualOrder": 18,
+    "review": "idea还不错，但是画质粗糙，难度有点大",
+    "addedAt": 1790672736387
+  },
+  {
+    "id": "steam_3241660",
+    "name": "R.E.P.O",
+    "appId": "3241660",
+    "genres": [
+      "恐怖",
+      "多人合作"
+    ],
+    "cardTheme": "多人合作",
+    "rating": 9,
+    "tier": "R",
+    "manualOrder": 38,
+    "review": "类似致命公司，但是感觉没有致命公司那么好玩。但总体还是很欢乐！",
+    "addedAt": 1790672736388
+  },
+  {
+    "id": "steam_4064510",
+    "name": "MOLE",
+    "appId": "4064510",
+    "genres": [
+      "解谜",
+      "视觉小说"
+    ],
+    "cardTheme": "视觉小说",
+    "rating": 9.6,
+    "tier": "SSR",
+    "manualOrder": 9,
+    "review": "精悍的故事，细腻的操作感，极致的氛围营造。",
+    "addedAt": 1792572088531
+  },
+  {
+    "id": "steam_206440",
+    "name": "Too the Moon",
+    "appId": "206440",
+    "genres": [
+      "视觉小说"
+    ],
+    "cardTheme": "视觉小说",
+    "rating": 9.5,
+    "tier": "SSR",
+    "manualOrder": 12,
+    "review": "玩完内心暖暖地，游戏是如此温馨，里面的人物也很有灵魂。剧情上是蝴蝶效应+怦然心动的结合。但是真的很好哭，两次流泪",
+    "addedAt": 1793030713586
+  },
+  {
+    "id": "steam_553420",
+    "name": "TUNIC",
+    "appId": "553420",
+    "genres": [
+      "多人合作",
+      "探索向",
+      "2D类银河恶魔城"
+    ],
+    "cardTheme": "探索向",
+    "rating": 9.1,
+    "tier": "SR",
+    "manualOrder": 33,
+    "review": "游戏理念非常出色，地图设计，传送阵的开启，隐藏的角落，每次发现都是惊喜。但是战斗操作非常困难，且真结局太难了，纯是和作者对电波。",
+    "addedAt": 1793030918718
+  },
+  {
+    "id": "steam_813230",
+    "name": "动物井",
+    "appId": "813230",
+    "genres": [
+      "解谜",
+      "2D类银河恶魔城"
+    ],
+    "cardTheme": "2D类银河恶魔城",
+    "rating": 9.2,
+    "tier": "SR",
+    "manualOrder": 13,
+    "review": "仅仅30MB的大小，却容纳了如此庞大的地下世界。丝滑的像素美术，巧妙的地图设计，就是跑图有点难了",
+    "addedAt": 1793031016682
+  }
+]

@@ -1,1 +1,13 @@
-.DS_Store\nThumbs.db\n*.tmp
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+.claude/
+node_modules/
+coverage/
+/.env
+/steam-library-*.json
+/.qa-artifacts/
+/.tmp-edge-profile/
+/data/backups/
+/data/covers/

@@ -1,0 +1,254 @@
+const EFFECT_PROPERTIES = Object.freeze([
+  '--rotate-x', '--rotate-y', '--light-x', '--light-y', '--foil-x', '--foil-y', '--foil-angle',
+  '--drag-x', '--drag-y', '--drag-rotate',
+]);
+
+const DRAG_THRESHOLD = 5;
+const INTERACTIVE_SELECTOR = 'button, a, input, select, textarea, label, [role="button"]';
+
+/** Delegated hover, drag and spring-return controller. No animation loop runs while cards are idle. */
+export function bindCardEffects(root) {
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const hover = window.matchMedia('(hover: hover) and (pointer: fine)');
+  let active = null;
+  let pointer = null;
+  let drag = null;
+  let paintFrame = 0;
+  let springFrame = 0;
+  let spring = null;
+  let suppressClickUntil = 0;
+
+  function cardFor(slot = active) {
+    return slot?.querySelector('.game-card') ?? null;
+  }
+
+  function releaseCapture(card, pointerId) {
+    try {
+      if (!card?.hasPointerCapture || card.hasPointerCapture(pointerId)) card?.releasePointerCapture?.(pointerId);
+    } catch { /* the browser may already have released this pointer */ }
+  }
+
+  function clearCard(slot = active) {
+    const card = cardFor(slot);
+    if (!slot || !card) return;
+    slot.classList.remove('is-inspecting', 'is-dragging', 'is-returning');
+    for (const property of EFFECT_PROPERTIES) card.style.removeProperty(property);
+  }
+
+  function cancelFrames() {
+    cancelAnimationFrame(paintFrame);
+    cancelAnimationFrame(springFrame);
+    paintFrame = 0;
+    springFrame = 0;
+    spring = null;
+  }
+
+  function reset() {
+    cancelFrames();
+    const held = drag;
+    drag = null;
+    if (held) releaseCapture(cardFor(held.slot), held.pointerId);
+    pointer = null;
+    clearCard();
+    active = null;
+  }
+
+  function activate(slot) {
+    if (slot === active) return;
+    cancelFrames();
+    clearCard();
+    active = slot;
+    active.classList.add('is-inspecting');
+  }
+
+  function setDragTransform(card, x, y, velocityX = 0) {
+    card.style.setProperty('--drag-x', `${x.toFixed(2)}px`);
+    card.style.setProperty('--drag-y', `${y.toFixed(2)}px`);
+    const rotation = Math.max(-7, Math.min(7, x * 0.025 + velocityX * 0.018));
+    card.style.setProperty('--drag-rotate', `${rotation.toFixed(2)}deg`);
+  }
+
+  function paint() {
+    paintFrame = 0;
+    if (!active?.isConnected || !pointer) { reset(); return; }
+    const rect = active.getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, (pointer.x - rect.left) / rect.width));
+    const y = Math.min(1, Math.max(0, (pointer.y - rect.top) / rect.height));
+    const card = cardFor();
+    card.style.setProperty('--rotate-x', `${((0.5 - y) * 13).toFixed(2)}deg`);
+    card.style.setProperty('--rotate-y', `${((x - 0.5) * 24).toFixed(2)}deg`);
+    card.style.setProperty('--light-x', `${(x * 100).toFixed(2)}%`);
+    card.style.setProperty('--light-y', `${(y * 100).toFixed(2)}%`);
+    card.style.setProperty('--foil-x', `${(25 + x * 50).toFixed(2)}%`);
+    card.style.setProperty('--foil-y', `${(25 + y * 50).toFixed(2)}%`);
+    card.style.setProperty('--foil-angle', `${(115 + x * 35 - y * 20).toFixed(2)}deg`);
+    if (drag?.moved) setDragTransform(card, drag.x, drag.y, drag.vx);
+  }
+
+  function schedulePaint() {
+    if (!paintFrame) paintFrame = requestAnimationFrame(paint);
+  }
+
+  function beginSpring(release) {
+    cancelAnimationFrame(paintFrame);
+    paintFrame = 0;
+    const slot = release.slot;
+    const card = cardFor(slot);
+    if (!card) { reset(); return; }
+    drag = null;
+    pointer = null;
+    slot.classList.remove('is-dragging');
+    slot.classList.add('is-returning');
+    spring = { slot, card, x: release.x, y: release.y, vx: release.vx, vy: release.vy, lastTime: 0, startTime: 0 };
+
+    function tick(time) {
+      if (!spring || !spring.slot.isConnected) { reset(); return; }
+      const dt = spring.lastTime ? Math.min(0.032, (time - spring.lastTime) / 1000) : 1 / 60;
+      if (!spring.startTime) spring.startTime = time;
+      spring.lastTime = time;
+      const stiffness = 210;
+      const damping = 19;
+      spring.vx += (-stiffness * spring.x - damping * spring.vx) * dt;
+      spring.vy += (-stiffness * spring.y - damping * spring.vy) * dt;
+      spring.x += spring.vx * dt;
+      spring.y += spring.vy * dt;
+      setDragTransform(spring.card, spring.x, spring.y, spring.vx);
+      const settled = Math.hypot(spring.x, spring.y) < 0.35 && Math.hypot(spring.vx, spring.vy) < 5;
+      const timedOut = time - spring.startTime > 1500;
+      if (settled || timedOut) {
+        const finishedSlot = spring.slot;
+        cancelFrames();
+        clearCard(finishedSlot);
+        if (active === finishedSlot) active = null;
+        return;
+      }
+      springFrame = requestAnimationFrame(tick);
+    }
+    springFrame = requestAnimationFrame(tick);
+  }
+
+  function releaseDrag(event, cancelled = false) {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const released = drag;
+    drag = null;
+    releaseCapture(cardFor(released.slot), released.pointerId);
+    if (!released.moved || cancelled || motion.matches) {
+      const moved = released.moved;
+      reset();
+      if (moved) suppressClickUntil = performance.now() + 350;
+      return;
+    }
+    released.vx = Math.max(-1600, Math.min(1600, released.vx));
+    released.vy = Math.max(-1600, Math.min(1600, released.vy));
+    suppressClickUntil = performance.now() + 350;
+    beginSpring(released);
+  }
+
+  root.addEventListener('pointerdown', (event) => {
+    if (motion.matches || !hover.matches || event.pointerType === 'touch' || event.button !== 0) return;
+    if (event.target.closest(INTERACTIVE_SELECTOR)) return;
+    const slot = event.target.closest('.card-slot');
+    if (!slot || !root.contains(slot)) return;
+    event.preventDefault?.();
+    let carryX = 0;
+    let carryY = 0;
+    if (spring) {
+      const returningSlot = spring.slot;
+      if (returningSlot === slot) {
+        carryX = spring.x;
+        carryY = spring.y;
+        cancelFrames();
+        returningSlot.classList.remove('is-returning');
+      } else {
+        cancelFrames();
+        clearCard(returningSlot);
+        if (active === returningSlot) active = null;
+      }
+    }
+    activate(slot);
+    const card = cardFor(slot);
+    drag = {
+      slot,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      lastX: event.clientX,
+      lastY: event.clientY,
+      lastTime: event.timeStamp || performance.now(),
+      baseX: carryX,
+      baseY: carryY,
+      x: carryX, y: carryY, vx: 0, vy: 0, moved: false,
+    };
+    pointer = { x: event.clientX, y: event.clientY };
+    try { card.setPointerCapture?.(event.pointerId); } catch { /* window listeners still provide a release fallback */ }
+  });
+
+  root.addEventListener('pointermove', (event) => {
+    if (drag && event.pointerId === drag.pointerId) {
+      const samples = event.getCoalescedEvents?.();
+      const sample = samples?.length ? samples[samples.length - 1] : event;
+      const dx = sample.clientX - drag.startX;
+      const dy = sample.clientY - drag.startY;
+      if (!drag.moved && Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
+        drag.moved = true;
+        drag.slot.classList.add('is-dragging');
+      }
+      if (drag.moved) {
+        event.preventDefault();
+        const now = sample.timeStamp || event.timeStamp || performance.now();
+        const dt = Math.max(8, now - drag.lastTime);
+        const instantVx = (sample.clientX - drag.lastX) / dt * 1000;
+        const instantVy = (sample.clientY - drag.lastY) / dt * 1000;
+        drag.vx = drag.vx * 0.65 + instantVx * 0.35;
+        drag.vy = drag.vy * 0.65 + instantVy * 0.35;
+        drag.x = drag.baseX + dx;
+        drag.y = drag.baseY + dy;
+        drag.lastX = sample.clientX;
+        drag.lastY = sample.clientY;
+        drag.lastTime = now;
+        setDragTransform(cardFor(drag.slot), drag.x, drag.y, drag.vx);
+      }
+      pointer = { x: sample.clientX, y: sample.clientY };
+      schedulePaint();
+      return;
+    }
+    if (spring) return;
+    if (motion.matches || !hover.matches || event.pointerType === 'touch') return;
+    const slot = event.target.closest('.card-slot');
+    if (!slot || !root.contains(slot)) { reset(); return; }
+    activate(slot);
+    pointer = { x: event.clientX, y: event.clientY };
+    schedulePaint();
+  }, { passive: false });
+
+  root.addEventListener('pointerup', (event) => releaseDrag(event));
+  root.addEventListener('pointercancel', (event) => releaseDrag(event, true));
+  window.addEventListener('pointerup', (event) => releaseDrag(event));
+  window.addEventListener('pointercancel', (event) => releaseDrag(event, true));
+  root.addEventListener('dragstart', (event) => {
+    if (event.target.closest('.game-card')) event.preventDefault();
+  });
+  root.addEventListener('lostpointercapture', (event) => {
+    if (drag && event.pointerId === drag.pointerId) releaseDrag(event);
+  });
+  root.addEventListener('pointerout', (event) => {
+    if (!drag && !spring && active && !active.contains(event.relatedTarget)) reset();
+  });
+  root.addEventListener('click', (event) => {
+    if (performance.now() <= suppressClickUntil) {
+      event.preventDefault();
+      event.stopImmediatePropagation?.();
+      suppressClickUntil = 0;
+      return;
+    }
+    suppressClickUntil = 0;
+    if (!spring) reset();
+  }, true);
+  window.addEventListener('blur', reset);
+  window.addEventListener('scroll', () => { if (!drag && !spring) reset(); }, { passive: true, capture: true });
+  window.addEventListener('resize', reset, { passive: true });
+  document.addEventListener('visibilitychange', reset);
+  motion.addEventListener('change', reset);
+  hover.addEventListener('change', reset);
+  return { reset };
+}

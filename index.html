@@ -1,1199 +1,247 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎮 Steam 游戏陈列库</title>
-<style>
-  :root {
-    --bg-primary: #1b1f27;
-    --bg-secondary: #212630;
-    --bg-card: #2a2f3b;
-    --bg-card-hover: #323846;
-    --bg-input: #1a1d24;
-    --border: #3a3f4b;
-    --text-primary: #e8eaed;
-    --text-secondary: #9aa0b0;
-    --text-muted: #6b7180;
-    --accent: #4f9cf7;
-    --accent-glow: rgba(79, 156, 247, 0.3);
-    --gold: #f0b90b;
-    --gold-dim: #6b5c1a;
-    --danger: #e0556a;
-    --success: #4caf84;
-    --warning: #e8a840;
-    --radius: 12px;
-    --radius-sm: 8px;
-    --radius-xs: 6px;
-    --shadow: 0 4px 24px rgba(0,0,0,0.4);
-    --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; line-height: 1.6;
-  }
-
-  /* Header */
-  .header {
-    background: var(--bg-secondary); border-bottom: 1px solid var(--border);
-    padding: 14px 28px; display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
-    box-shadow: 0 1px 8px rgba(0,0,0,0.3);
-  }
-  .header-logo { display: flex; align-items: center; gap: 10px; font-size: 1.35rem; font-weight: 700; cursor: default; }
-  .header-logo .icon { font-size: 1.7rem; }
-  .header-logo .accent { color: var(--accent); }
-  .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px; padding: 9px 17px;
-    border: none; border-radius: var(--radius-xs); font-size: 0.86rem; font-weight: 600;
-    cursor: pointer; transition: var(--transition); font-family: inherit; white-space: nowrap;
-  }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { background: #3d8bec; transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
-  .btn-accent { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
-  .btn-accent:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(102,126,234,0.35); }
-  .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); }
-  .btn-secondary:hover { background: var(--bg-card-hover); }
-  .btn-danger { background: var(--danger); color: #fff; }
-  .btn-danger:hover { background: #c94a5d; }
-  .btn-sm { padding: 6px 12px; font-size: 0.78rem; }
-  .btn-xs { padding: 4px 10px; font-size: 0.72rem; }
-
-  /* Stats */
-  .stats-bar { display: flex; gap: 14px; padding: 18px 28px; flex-wrap: wrap; }
-  .stat-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px 18px; min-width: 100px; cursor: default; }
-  .stat-value { font-size: 1.45rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
-  .stat-label { font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; }
-
-  /* Controls */
-  .controls { display: flex; gap: 10px; padding: 0 28px 18px; flex-wrap: wrap; align-items: center; }
-  .search-box { flex: 1; min-width: 200px; max-width: 320px; position: relative; }
-  .search-box input { width: 100%; padding: 9px 14px 9px 36px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.9rem; font-family: inherit; outline: none; transition: var(--transition); }
-  .search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-  .search-box .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem; pointer-events: none; }
-  select { padding: 9px 14px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.9rem; font-family: inherit; cursor: pointer; outline: none; transition: var(--transition); min-width: 130px; }
-  select:focus { border-color: var(--accent); }
-
-  /* ---- sort pills (more visible than dropdown alone) ---- */
-  .sort-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-  .sort-pills .pill-label { font-size: 0.78rem; color: var(--text-muted); margin-right: 2px; }
-  .sort-pill {
-    padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
-    background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border);
-    cursor: pointer; transition: var(--transition); font-family: inherit; white-space: nowrap;
-  }
-  .sort-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .sort-pill:hover:not(.active) { color: var(--text-primary); border-color: #555; }
-
-  /* Game Grid */
-  .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; padding: 0 28px 28px; }
-  .empty-state { grid-column: 1 / -1; text-align: center; padding: 80px 20px; color: var(--text-muted); }
-  .empty-state .icon { font-size: 4rem; display: block; margin-bottom: 16px; }
-  .empty-state h3 { font-size: 1.15rem; margin-bottom: 8px; color: var(--text-secondary); }
-  .empty-state p { font-size: 0.9rem; margin-bottom: 16px; }
-
-  /* Game Card */
-  .game-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: var(--transition); display: flex; flex-direction: column; position: relative; }
-  .game-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: #4a4f5c; }
-  .card-cover { width: 100%; height: 175px; background: linear-gradient(135deg, #1e2a3a 0%, #162030 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-  .card-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
-  .game-card:hover .card-cover img { transform: scale(1.04); }
-  .card-cover .fallback-icon { font-size: 3.5rem; opacity: 0.25; position: absolute; }
-  .card-cover .rating-badge {
-    position: absolute; top: 10px; right: 10px;
-    background: rgba(0,0,0,0.82); backdrop-filter: blur(8px);
-    color: var(--gold); padding: 5px 11px; border-radius: 20px;
-    font-weight: 700; font-size: 0.85rem;
-    display: flex; align-items: center; gap: 3px;
-  }
-  .card-cover .rating-badge.bad { color: #e0556a; }
-  .card-cover .rating-badge.mid { color: #e8a840; }
-  .card-cover .rating-badge.good { color: #4caf84; }
-  .card-cover .rating-badge.great { color: var(--gold); }
-  .card-body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
-  .card-title { font-size: 1rem; font-weight: 700; line-height: 1.3; }
-  .card-genre { display: inline-flex; align-self: flex-start; padding: 3px 10px; background: rgba(79,156,247,0.12); color: var(--accent); border-radius: 20px; font-size: 0.73rem; font-weight: 600; }
-  .card-review { font-size: 0.82rem; color: var(--text-secondary); -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
-  .card-review.empty { color: var(--text-muted); font-style: italic; }
-  .card-footer { display: flex; gap: 6px; padding-top: 6px; }
-  .card-footer .btn { flex: 1; justify-content: center; }
-
-  /* Modal */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.68); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.18s ease; }
-  .modal { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.6); animation: slideUp 0.22s ease; }
-  .modal-header { padding: 20px 24px 0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--bg-secondary); z-index: 1; }
-  .modal-header h2 { font-size: 1.15rem; }
-  .modal-header .close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; padding: 4px 8px; border-radius: var(--radius-xs); transition: var(--transition); }
-  .modal-header .close-btn:hover { color: var(--text-primary); background: var(--bg-card); }
-  .modal-body { padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 14px; }
-
-  .form-group { display: flex; flex-direction: column; gap: 5px; }
-  .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; }
-  .form-group input, .form-group select, .form-group textarea { padding: 10px 14px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-xs); color: var(--text-primary); font-size: 0.9rem; font-family: inherit; outline: none; transition: var(--transition); }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-  .form-group textarea { resize: vertical; min-height: 80px; }
-  .form-group .hint { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; }
-  .form-group .hint a { color: var(--accent); cursor: pointer; text-decoration: underline; }
-  .form-row { display: flex; gap: 10px; }
-  .form-row .form-group { flex: 1; }
-
-  .cover-input-row { display: flex; gap: 8px; align-items: flex-end; }
-  .cover-input-row .form-group { flex: 1; }
-  .cover-preview { width: 100%; height: 160px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-xs); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-top: 2px; }
-  .cover-preview img { width: 100%; height: 100%; object-fit: cover; }
-  .cover-preview .placeholder { color: var(--text-muted); font-size: 0.82rem; text-align: center; padding: 12px; }
-  .search-results { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-xs); max-height: 200px; overflow-y: auto; z-index: 10; display: none; box-shadow: var(--shadow); }
-  .search-results .item { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
-  .search-results .item:last-child { border-bottom: none; }
-  .search-results .item:hover { background: var(--bg-card); }
-  .search-results .item img { width: 40px; height: 19px; object-fit: cover; border-radius: 3px; flex-shrink: 0; }
-  .search-results .item .item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-  /* ---- 10-point rating slider ---- */
-  .rating-slider-wrap { display: flex; align-items: center; gap: 12px; }
-  .rating-slider-wrap input[type=range] {
-    -webkit-appearance: none; flex: 1; height: 8px; border-radius: 4px;
-    background: linear-gradient(to right, var(--danger), var(--warning) 30%, var(--gold) 60%, var(--success) 100%);
-    outline: none; cursor: pointer;
-  }
-  .rating-slider-wrap input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%;
-    background: var(--text-primary); border: 2px solid var(--accent); cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-  .rating-display {
-    font-size: 1.6rem; font-weight: 700; min-width: 60px; text-align: center;
-  }
-  .rating-display.unset { color: var(--text-muted); }
-  .rating-display.bad { color: #e0556a; }
-  .rating-display.mid { color: #e8a840; }
-  .rating-display.good { color: #4caf84; }
-  .rating-display.great { color: var(--gold); }
-
-  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; }
-
-  /* Sync Modal */
-  .sync-modal { max-width: 620px; }
-  .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 4px; }
-  .tab-btn { padding: 11px 20px; background: none; border: none; color: var(--text-muted); font-size: 0.88rem; font-weight: 600; cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: var(--transition); }
-  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .tab-btn:hover { color: var(--text-primary); }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-
-  .file-drop-zone { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 40px; text-align: center; cursor: pointer; transition: var(--transition); background: var(--bg-input); }
-  .file-drop-zone:hover, .file-drop-zone.drag-over { border-color: var(--accent); background: rgba(79,156,247,0.05); }
-  .file-drop-zone .icon { font-size: 2.5rem; margin-bottom: 10px; }
-  .file-drop-zone .main-text { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
-  .file-drop-zone .sub-text { font-size: 0.78rem; color: var(--text-muted); }
-  .file-path { font-family: 'Consolas','Monaco',monospace; font-size: 0.78rem; background: rgba(79,156,247,0.1); padding: 3px 8px; border-radius: 3px; color: var(--accent); word-break: break-all; }
-
-  .import-progress { display: none; padding: 14px; border-radius: var(--radius-xs); background: var(--bg-input); border: 1px solid var(--border); }
-  .import-progress .bar-track { height: 6px; background: var(--bg-primary); border-radius: 3px; margin-top: 10px; overflow: hidden; }
-  .import-progress .bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; width: 0%; }
-  .import-log { max-height: 200px; overflow-y: auto; font-size: 0.78rem; font-family: 'Consolas','Monaco',monospace; margin-top: 8px; }
-  .import-log .log-ok { color: var(--success); }
-  .import-log .log-skip { color: var(--warning); }
-  .import-log .log-fail { color: var(--danger); }
-
-  .status-box { padding: 12px 16px; border-radius: var(--radius-xs); font-size: 0.84rem; display: none; }
-  .status-box.info { display: block; background: rgba(79,156,247,0.08); border: 1px solid rgba(79,156,247,0.25); color: var(--accent); }
-  .status-box.success { display: block; background: rgba(76,175,132,0.08); border: 1px solid rgba(76,175,132,0.25); color: var(--success); }
-  .status-box.error { display: block; background: rgba(224,85,106,0.08); border: 1px solid rgba(224,85,106,0.25); color: var(--danger); }
-  .status-box.loading { display: block; background: rgba(232,168,64,0.08); border: 1px solid rgba(232,168,64,0.25); color: var(--warning); }
-
-  /* Batch resolve table */
-  .batch-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
-  .batch-table th { text-align: left; padding: 8px 10px; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid var(--border); }
-  .batch-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
-  .batch-table img { width: 92px; height: 43px; object-fit: cover; border-radius: 3px; }
-  .batch-table input { width: 100%; padding: 6px 8px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-size: 0.82rem; font-family: inherit; outline: none; }
-  .batch-table input:focus { border-color: var(--accent); }
-
-  /* Toast */
-  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
-  .toast { padding: 12px 20px; border-radius: var(--radius-xs); color: #fff; font-weight: 600; font-size: 0.86rem; animation: slideIn 0.25s ease; box-shadow: var(--shadow); max-width: 380px; }
-  .toast-success { background: var(--success); }
-  .toast-error { background: var(--danger); }
-  .toast-info { background: var(--accent); }
-
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
-
-  @media (max-width: 768px) {
-    .header { padding: 12px 14px; }
-    .header-logo { font-size: 1.1rem; }
-    .btn { padding: 7px 12px; font-size: 0.78rem; }
-    .stats-bar { padding: 12px 14px; gap: 8px; }
-    .stat-card { padding: 10px 14px; min-width: 80px; }
-    .stat-value { font-size: 1.2rem; }
-    .controls { padding: 0 14px 14px; flex-direction: column; align-items: flex-start; }
-    .sort-pills { order: -1; }
-    .game-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; padding: 0 14px 14px; }
-    .form-row { flex-direction: column; }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="一个本地优先、可导入 Steam 游戏的个人游戏陈列库。">
+  <title>Steam 游戏陈列库</title>
+  <link rel="stylesheet" href="./assets/styles.css">
+  <link rel="stylesheet" href="./assets/exhibition.css">
+  <link rel="stylesheet" href="./assets/rarity.css">
 </head>
 <body>
+  <header class="app-header" id="adminToolbar" aria-label="管理员工具栏" hidden>
+    <nav class="header-actions" aria-label="游戏库操作">
+      <button class="button button--accent" id="openSteamImport" type="button">从 Steam 导入</button>
+      <button class="button button--secondary" id="exportLibrary" type="button">导出备份</button>
+      <button class="button button--secondary" id="chooseJsonImport" type="button">导入备份</button>
+      <input class="visually-hidden" id="jsonImportFile" type="file" accept="application/json,.json">
+      <button class="button button--primary" id="openAddGame" type="button">添加游戏</button>
+      <button class="button button--secondary" id="openOrderEditor" type="button">管理排序</button>
+    </nav>
+  </header>
 
-<!-- HEADER -->
-<header class="header">
-  <div class="header-logo"><span class="icon">🎮</span><span>Steam <span class="accent">陈列库</span></span></div>
-  <div class="header-actions">
-    <button class="btn btn-accent" onclick="openSyncModal()">🔄 从 Steam 导入</button>
-    <button class="btn btn-secondary" onclick="exportData()">📥 导出</button>
-    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('importFile').click()">📤 导入</button>
-    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
-    <button class="btn btn-primary" onclick="openGameModal()">＋ 添加游戏</button>
-  </div>
-</header>
+  <main id="library" class="app-main">
+    <section class="hero" aria-labelledby="pageTitle">
+      <div>
+        <p class="eyebrow">PIGGY’S Steam GAME GALLERY </p>
+        <h1 id="pageTitle">PIGGY的<br>Steam<span>游戏库。</span></h1>
+        <p class="hero__description">2025.09 - 2026.10</p>
+      </div>
+      <div class="hero__shortcut" aria-label="搜索快捷键"><kbd>Ctrl</kbd><span>+</span><kbd>K</kbd><span>快速搜索</span></div>
+    </section>
 
-<!-- STATS -->
-<div class="stats-bar" id="statsBar"></div>
+    <section class="honors" aria-labelledby="honorsTitle">
+      <header class="section-heading">
+        <div><p class="eyebrow">01 / THE CROWN JEWELS</p><h2 id="honorsTitle">殿堂珍藏</h2></div>
+        <p>游戏挚爱</p>
+      </header>
+      <div class="podium" id="podium" aria-label="个人珍藏前三名"></div>
+    </section>
 
-<!-- CONTROLS -->
-<div class="controls">
-  <div class="search-box">
-    <span class="search-icon">🔍</span>
-    <input type="text" id="searchInput" placeholder="搜索游戏... (Ctrl+K)" oninput="render()">
-  </div>
-  <select id="genreFilter" onchange="render()"><option value="">全部类型</option></select>
-  <select id="sortBy" onchange="updateSortPills();render()" style="display:none">
-    <option value="rating-desc">评分高→低</option>
-    <option value="recent">最近添加</option>
-    <option value="rating-asc">评分低→高</option>
-    <option value="name">名称 A-Z</option>
-    <option value="name-desc">名称 Z-A</option>
-  </select>
-  <span style="font-size:0.8rem;color:var(--text-muted);white-space:nowrap" id="resultCount"></span>
-</div>
+    <p class="local-backup-status" id="localBackupStatus" role="status" hidden>正在读取游戏库…</p>
 
-<!-- SORT PILLS -->
-<div style="padding:0 28px 14px">
-  <div class="sort-pills" id="sortPills">
-    <span class="pill-label">排序：</span>
-    <button class="sort-pill" data-sort="recent">🕐 最近添加</button>
-    <button class="sort-pill active" data-sort="rating-desc">⭐ 评分最高</button>
-    <button class="sort-pill" data-sort="rating-asc">⭐ 评分最低</button>
-    <button class="sort-pill" data-sort="name">🔤 A-Z</button>
-  </div>
-</div>
+    <section class="collection" aria-labelledby="albumTitle">
+    <header class="section-heading">
+      <div><p class="eyebrow">02 / THE COLLECTOR’S ALBUM</p><h2 id="albumTitle">我的Steam游戏卡册</h2></div>
+    </header>
 
-<!-- GRID -->
-<div class="game-grid" id="gameGrid"></div>
+    <section class="toolbar" aria-label="筛选与排序">
+      <label class="search-field" for="searchInput">
+        <span aria-hidden="true">⌕</span>
+        <input id="searchInput" type="search" placeholder="搜索名称、类型、短评或 UR / SSR 等档次" autocomplete="off">
+      </label>
+      <label class="select-field">
+        <span>类型</span>
+        <select id="genreFilter"><option value="">全部类型</option></select>
+      </label>
+      <p class="result-count" id="resultCount" aria-live="polite"></p>
+    </section>
 
-<!-- TOAST -->
-<div class="toast-container" id="toastContainer"></div>
+    <section class="sort-bar" aria-label="排序方式">
+      <span>排序</span>
+      <div class="sort-options" id="sortOptions">
+        <button class="sort-option is-active" type="button" data-sort="manual">我的排序</button>
+        <button class="sort-option" type="button" data-sort="recent">最近添加</button>
+        <button class="sort-option" type="button" data-sort="tier-desc">档次从高到低</button>
+        <button class="sort-option" type="button" data-sort="tier-asc">档次从低到高</button>
+        <button class="sort-option" type="button" data-sort="name">名称 A–Z</button>
+      </div>
+    </section>
 
-<!-- ============ GAME MODAL ============ -->
-<div class="modal-overlay" id="gameModalOverlay" style="display:none" onclick="if(event.target===this)closeGameModal()">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-header">
-      <h2 id="gameModalTitle">添加游戏</h2>
-      <button class="close-btn" onclick="closeGameModal()">✕</button>
+    <p id="honorMatches" class="honor-matches" hidden></p>
+    <div class="album" id="album">
+      <div class="album__spine" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="album__sheet">
+        <header class="album__heading"><span>STEAM / PERSONAL COLLECTION</span><span id="sheetNumber" tabindex="-1">SHEET 01</span></header>
+        <section class="game-grid" id="gameGrid" aria-label="当前页收藏卡"></section>
+        <nav class="album__pagination" aria-label="卡册翻页">
+          <button class="page-button" id="previousPage" type="button" aria-label="卡册上一页">← 上一页</button>
+          <span id="pageStatus" role="status" aria-live="polite"></span>
+          <button class="page-button" id="nextPage" type="button" aria-label="卡册下一页">下一页 →</button>
+        </nav>
+      </div>
     </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>🎮 游戏名称 *</label>
-        <input type="text" id="gameName" placeholder="例如：艾尔登法环">
-      </div>
-      <div class="form-group" style="position:relative">
-        <label>🖼️ 游戏封面</label>
-        <input type="text" id="coverInput"
-               placeholder="粘贴 Steam 商店链接，封面自动出现"
-               oninput="onCoverInput()" autocomplete="off">
-        <span class="hint">粘贴 <code>store.steampowered.com/app/XXXXX</code> 链接 或直接填 App ID</span>
-        <div class="search-results" id="searchResults"></div>
-      </div>
-      <div class="cover-preview" id="coverPreview">
-        <span class="placeholder">⬆ 粘贴 Steam 链接，封面自动出现</span>
-      </div>
-      <input type="hidden" id="gameAppId">
-      <div class="form-row">
-        <div class="form-group">
-          <label>📂 游戏类型 *</label>
-          <select id="gameGenre"></select>
+    <p class="collection-footer">PIGGY STUDIO. INC. <span>猪的Steam收藏册</span></p>
+    </section>
+  </main>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <dialog class="dialog" id="gameDialog" aria-labelledby="gameDialogTitle">
+    <form id="gameForm">
+      <header class="dialog__header">
+        <div>
+          <p class="eyebrow">LIBRARY ENTRY</p>
+          <h2 id="gameDialogTitle">添加游戏</h2>
         </div>
-      </div>
-      <!-- 10-point rating -->
-      <div class="form-group">
-        <label>⭐ 评分（0.0 ~ 10.0）</label>
-        <div class="rating-slider-wrap">
-          <input type="range" id="ratingSlider" min="0" max="10" step="0.1" value="0" oninput="updateRatingDisplay()">
-          <span class="rating-display unset" id="ratingDisplay">未评</span>
+        <button class="icon-button" type="button" data-close-dialog="gameDialog" aria-label="关闭">×</button>
+      </header>
+      <div class="dialog__body">
+        <label class="field">
+          <span>游戏名称 <b aria-hidden="true">*</b></span>
+          <input id="gameName" name="name" required maxlength="120" placeholder="例如：星际拓荒">
+        </label>
+
+        <label class="field field--relative">
+          <span>Steam 商店链接或 App ID</span>
+          <input id="coverInput" name="cover" autocomplete="off" placeholder="https://store.steampowered.com/app/753640/">
+          <small>输入名称也可以搜索；选择结果后会自动填入封面。</small>
+          <div class="search-results" id="steamSearchResults" hidden></div>
+        </label>
+        <input id="gameAppId" name="appId" type="hidden">
+        <div class="cover-preview" id="coverPreview"><span>封面预览</span></div>
+
+        <fieldset class="field genre-field">
+          <legend>游戏类型（可多选）</legend>
+          <div class="genre-picker" id="gameGenre"></div>
+        </fieldset>
+        <div class="field-row">
+          <label class="field">
+            <span>卡面主题</span>
+            <select id="cardTheme" name="cardTheme" aria-describedby="cardThemeHint"></select>
+            <small id="cardThemeHint">从已选类型中选择卡面颜色；前三名使用金银铜卡面。</small>
+          </label>
         </div>
-      </div>
-      <div class="form-group">
-        <label>📝 我的评价</label>
-        <textarea id="gameReview" placeholder="写下你对这款游戏的感受...（可选）"></textarea>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeGameModal()">取消</button>
-        <button class="btn btn-primary" id="saveGameBtn" onclick="saveGame()">💾 保存</button>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- ============ SYNC MODAL ============ -->
-<div class="modal-overlay" id="syncModalOverlay" style="display:none" onclick="if(event.target===this)closeSyncModal()">
-  <div class="modal sync-modal" onclick="event.stopPropagation()">
-    <div class="modal-header">
-      <h2>🔄 从 Steam 导入游戏</h2>
-      <button class="close-btn" onclick="closeSyncModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchSyncTab('vdf')">📁 本地文件导入（推荐）</button>
-        <button class="tab-btn" onclick="switchSyncTab('api')">🔑 API 导入</button>
+        <fieldset class="field tier-field">
+          <legend>珍藏档次</legend>
+          <p class="tier-hint">只按你的真实感受选择，也可以暂不定级。</p>
+          <div class="tier-picker" id="tierPicker"></div>
+        </fieldset>
+
+        <label class="field">
+          <span>我的短评</span>
+          <textarea id="gameReview" name="review" maxlength="600" placeholder="写下这款游戏留给你的印象"></textarea>
+        </label>
+      </div>
+      <footer class="dialog__footer">
+        <button class="button button--secondary" type="button" data-close-dialog="gameDialog">取消</button>
+        <button class="button button--primary" id="saveGameButton" type="submit">保存</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog class="dialog dialog--wide" id="steamImportDialog" aria-labelledby="steamImportTitle">
+    <header class="dialog__header">
+      <div>
+        <p class="eyebrow">IMPORT</p>
+        <h2 id="steamImportTitle">从 Steam 导入</h2>
+      </div>
+      <button class="icon-button" type="button" data-close-dialog="steamImportDialog" aria-label="关闭">×</button>
+    </header>
+    <div class="dialog__body">
+      <div class="tabs" role="tablist" aria-label="导入方式">
+        <button class="tab is-active" id="vdfTab" type="button" role="tab" aria-selected="true" aria-controls="vdfPanel" data-tab="vdf">本地 VDF</button>
+        <button class="tab" id="apiTab" type="button" role="tab" aria-selected="false" aria-controls="apiPanel" data-tab="api">Steam Web API</button>
       </div>
 
-      <!-- TAB 1: VDF -->
-      <div class="tab-panel active" id="tabVdf">
-        <div class="status-box info"><strong>✅ 无需 API Key</strong> — 从 Steam 客户端本地文件读取游戏列表</div>
-        <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6">
-          <p style="margin-bottom:4px"><strong>📁 选择文件：</strong></p>
-          <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-xs);padding:10px 14px;font-size:0.8rem;line-height:1.7">
-            📄 <strong>localconfig.vdf</strong> <span style="color:var(--success)">← 推荐</span><br>
-            <span style="color:var(--text-muted)">路径：</span><code class="file-path">Steam\userdata\&lt;ID&gt;\config\localconfig.vdf</code>
+      <section class="tab-panel" id="vdfPanel" role="tabpanel" aria-labelledby="vdfTab">
+        <div class="notice notice--info">
+          <strong>推荐方式，无需 API Key。</strong>
+          选择 <code>Steam\userdata\&lt;ID&gt;\config\localconfig.vdf</code>，文件只在本机浏览器中解析。
+        </div>
+        <button class="drop-zone" id="vdfDropZone" type="button">
+          <span class="drop-zone__icon" aria-hidden="true">⇧</span>
+          <strong>选择或拖入 VDF 文件</strong>
+          <small>支持 localconfig.vdf / sharedconfig.vdf</small>
+        </button>
+        <input class="visually-hidden" id="vdfFileInput" type="file" accept=".vdf,.txt">
+        <div class="progress-panel" id="vdfProgress" hidden>
+          <div class="progress-panel__header">
+            <strong id="vdfStatus">等待导入</strong>
+            <span id="vdfProgressValue">0%</span>
           </div>
+          <progress id="vdfProgressBar" max="100" value="0"></progress>
+          <div class="import-log" id="vdfLog" aria-live="polite"></div>
         </div>
-        <div class="file-drop-zone" id="vdfDropZone"
-             onclick="document.getElementById('vdfFileInput').click()"
-             ondragover="event.preventDefault();this.classList.add('drag-over')"
-             ondragleave="this.classList.remove('drag-over')"
-             ondrop="event.preventDefault();this.classList.remove('drag-over');handleVdfFile(event.dataTransfer.files[0])">
-          <div class="icon">📂</div>
-          <div class="main-text">点击选择 或 拖拽 .vdf 文件到这里</div>
-          <div class="sub-text">支持 localconfig.vdf / sharedconfig.vdf</div>
+      </section>
+
+      <section class="tab-panel" id="apiPanel" role="tabpanel" aria-labelledby="apiTab" hidden>
+        <div class="notice notice--secure">
+          <strong>密钥只在本次请求中使用。</strong>
+          浏览器仅把它发送给本机服务，再由本机访问 Steam 官方 API；不会写入浏览器存储或发送给公共代理。
         </div>
-        <input type="file" id="vdfFileInput" accept=".vdf,.txt" style="display:none" onchange="handleVdfFile(this.files[0])">
-        <div class="import-progress" id="vdfProgress">
-          <div id="vdfStatusText" style="font-size:0.84rem;font-weight:600"></div>
-          <div class="bar-track"><div class="bar-fill" id="vdfBar"></div></div>
-          <div class="import-log" id="vdfLog"></div>
-        </div>
-      </div>
-
-      <!-- TAB 2: API -->
-      <div class="tab-panel" id="tabApi">
-        <div class="status-box info"><strong>🔑 需要 Steam Web API Key</strong> — <a href="https://steamcommunity.com/dev/apikey" target="_blank" style="color:var(--accent)">免费获取</a>（填 localhost 即可）</div>
-        <div class="form-row">
-          <div class="form-group"><label>🔑 API Key</label><input type="text" id="syncApiKey" placeholder="从 steamcommunity.com/dev/apikey 获取"></div>
-          <div class="form-group"><label>🆔 Steam ID（17位）</label><input type="text" id="syncSteamId" placeholder="Steam → 账户明细"></div>
-        </div>
-        <div id="apiStatus" class="status-box"></div>
-        <div id="apiManualArea" style="display:none">
-          <div class="form-group"><label>📋 手动粘贴 JSON</label><textarea id="apiManualJson" style="min-height:120px;font-size:0.78rem;font-family:'Consolas','Monaco',monospace"></textarea></div>
-          <button class="btn btn-primary btn-sm" onclick="apiManualImport()">📥 导入</button>
-        </div>
-        <button class="btn btn-accent" onclick="syncFromAPI()" style="width:100%;justify-content:center">🔄 开始同步</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ BATCH RESOLVE MODAL ============ -->
-<div class="modal-overlay" id="batchResolveOverlay" style="display:none" onclick="if(event.target===this)closeBatchResolve()">
-  <div class="modal" style="max-width:700px" onclick="event.stopPropagation()">
-    <div class="modal-header">
-      <h2>📝 批量补全游戏名称</h2>
-      <button class="close-btn" onclick="closeBatchResolve()">✕</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:0.85rem;color:var(--text-secondary)">
-        以下游戏的封面已加载，请依次填入游戏名称。修改后点击「保存并继续查询」。
-      </p>
-      <div style="max-height:50vh;overflow-y:auto">
-        <table class="batch-table" id="batchTable">
-          <thead><tr><th>封面</th><th>App ID</th><th>游戏名称</th></tr></thead>
-          <tbody id="batchTbody"></tbody>
-        </table>
-      </div>
-      <div class="modal-footer" style="margin-top:8px">
-        <button class="btn btn-accent btn-sm" onclick="retryResolveNames()">🔄 重新自动查询</button>
-        <button class="btn btn-primary" onclick="saveBatchResolve()">💾 保存并继续</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-// ==================== DATA ====================
-const STORAGE_KEY = 'steam_game_library_v3'; // v3: 10-point scale
-const GENRES = [
-  '动作','冒险','角色扮演','策略','模拟','射击','竞速','体育','格斗',
-  '恐怖','解谜','生存','开放世界','潜行','Roguelike','类魂',
-  '独立游戏','视觉小说','音乐/节奏','大型多人在线','MOBA','即时战略',
-  '塔防','卡牌','悬疑','科幻','奇幻','武侠','恋爱模拟','休闲','其他'
-];
-
-// ==================== DEFAULT DATA (shared library) ====================
-// Embedded game data — first-time visitors see this before they build their own library.
-// To update: export JSON from the app, paste below, and redeploy.
-const DEFAULT_GAMES = [{"id":"steam_1435790","name":"密室逃脱模拟器","appId":"1435790","genre":"解谜","rating":8.4,"review":"糖水解密游戏，畅享一切密室题材，无功无过","addedAt":1780989822369,"_migrated":true},{"id":"steam_774181","name":"节奏医生","appId":"774181","genre":"音乐/节奏","rating":8.4,"review":"个人更喜欢类节奏天国","addedAt":1780989822383,"_migrated":true},{"id":"steam_210970","name":"The Witness","appId":"210970","genre":"解谜","rating":9,"review":"给了我好多的震撼，但是太难了通关不了","addedAt":1780989822383,"_migrated":true},{"id":"steam_242760","name":"The Forest","appId":"242760","genre":"大型多人在线","rating":8.7,"review":"不喜欢恐怖，但剧情很好","addedAt":1780989822383,"_migrated":true},{"id":"steam_322330","name":"饥荒","appId":"322330","genre":"其他","rating":8.6,"review":"好难","addedAt":1780989822383,"_migrated":true},{"id":"steam_578080","name":"PUBG","appId":"578080","genre":"大型多人在线","rating":8,"review":"无功无过","addedAt":1780989822383,"_migrated":true},{"id":"steam_774171","name":"Muse Dash","appId":"774171","genre":"音乐/节奏","rating":4.9,"review":"无聊","addedAt":1780989822383,"_migrated":true},{"id":"steam_939400","name":"拣爱","appId":"939400","genre":"视觉小说","rating":9.4,"review":"原来，爱还有另一层含义","addedAt":1780989822383,"_migrated":true},{"id":"steam_976010","name":"I hate this game","appId":"976010","genre":"解谜","rating":7.2,"review":"有巧思但不多","addedAt":1780989822383,"_migrated":true},{"id":"steam_1206610","name":"Rubber Bandits","appId":"1206610","genre":"大型多人在线","rating":6.5,"review":"垃圾","addedAt":1780989822383,"_migrated":true},{"id":"steam_1568590","name":"鹅鸭杀","appId":"1568590","genre":"大型多人在线","rating":8.5,"review":"好玩！","addedAt":1780989822394,"_migrated":true},{"id":"steam_1585220","name":"Melatonin（褪黑素）","appId":"1585220","genre":"音乐/节奏","rating":8.4,"review":"和节奏天国比相形见绌，但画风唯美","addedAt":1780989822394,"_migrated":true},{"id":"steam_1624540","name":"Storyteller","appId":"1624540","genre":"解谜","rating":8.4,"review":"有创意有小巧思\n但某些关需要重复试错，提示不明显","addedAt":1780989822394,"_migrated":true},{"id":"steam_1966720","name":"致命公司","appId":"1966720","genre":"大型多人在线","rating":9.4,"review":"玩得最久的多人游戏","addedAt":1780989822394,"_migrated":true},{"id":"steam_2200650","name":"Bits & Bops","appId":"2200650","genre":"音乐/节奏","rating":9.5,"review":"类节奏天国的神，太好玩了，画风、关卡、音乐都神！","addedAt":1780989822394,"_migrated":true},{"id":"steam_2379780","name":"小丑牌","appId":"2379780","genre":"Roguelike","rating":9.4,"review":"肉鸽的神，几十MB玩30h+","addedAt":1780989822394,"_migrated":true},{"id":"steam_461950","name":"Beat Cop","appId":"461950","genre":"解谜","rating":7.3,"review":"无聊","addedAt":1780989822394,"_migrated":true},{"id":"steam_1012880","name":"60秒生存","appId":"1012880","genre":"其他","rating":2.5,"review":"无聊","addedAt":1780989822404,"_migrated":true},{"id":"steam_1092790","name":"邪恶冥刻","appId":"1092790","genre":"Roguelike","rating":9.8,"review":"剧情和玩法都无敌","addedAt":1780989822404,"_migrated":true},{"id":"steam_3314790","name":"CLOVERPIT（幸运草深渊）","appId":"3314790","genre":"Roguelike","rating":8.4,"review":"一开始很惊艳，玩多了觉得所犯乏味","addedAt":1780989822404,"_migrated":true},{"id":"steam_753640","name":"星际拓荒","appId":"753640","genre":"解谜","rating":10,"review":"28万年的宇宙，三个文明在不同时空的交映。宇宙浪漫，星河静谧，何不烤个棉花糖，吹着口哨，安然入眠。","addedAt":1780989822404,"_migrated":true},{"id":"steam_1931770","name":"巴别塔圣歌","appId":"1931770","genre":"解谜","rating":10,"review":"语言不是文明间的阻碍，人心中的成见才是。","addedAt":1780989822404,"_migrated":true},{"id":"steam_1497440","name":"Cocoon（茧）","appId":"1497440","genre":"解谜","rating":9.5,"review":"伟大的idea，绝美的画风，极致的解谜","addedAt":1780989822404,"_migrated":true},{"id":"steam_1426210","name":"双人成行","appId":"1426210","genre":"大型多人在线","rating":9.4,"review":"好玩！","addedAt":1780989822415,"_migrated":true},{"id":"steam_1055540","name":"A Short Hike","appId":"1055540","genre":"冒险","rating":8.6,"review":"和TOEM一样都是放松旅行的佳作","addedAt":1780989822415,"_migrated":true},{"id":"steam_557600","name":"GOROGOA","appId":"557600","genre":"解谜","rating":9.2,"review":"非常巧妙，短小精悍","addedAt":1780989822415,"_migrated":true},{"id":"steam_1475840","name":"Rhythm Sprout","appId":"1475840","genre":"音乐/节奏","rating":6.8,"review":"一般","addedAt":1780989822415,"_migrated":true},{"id":"steam_461040","name":"Pico Park","appId":"461040","genre":"大型多人在线","rating":8.3,"review":"","addedAt":1780989822415,"_migrated":true},{"id":"steam_1746030","name":"山河旅探","appId":"1746030","genre":"解谜","rating":9.1,"review":"剧情满分，层层转折，家国之魂","addedAt":1780989822415,"_migrated":true},{"id":"steam_2868840","name":"杀戮尖塔Ⅱ","appId":"2868840","genre":"Roguelike","rating":9.4,"review":"虽然安东尼是石，但是游戏本身很上瘾","addedAt":1780989822415,"_migrated":true},{"id":"steam_1307580","name":"TOEM","appId":"1307580","genre":"冒险","rating":8.4,"review":"旅拍模拟器，氛围活跃轻松","addedAt":1780989822415,"_migrated":true},{"id":"steam_2721890","name":"Ooo","appId":"2721890","genre":"解谜","rating":9.8,"review":"太巧妙了，把一个点子玩出花了，解谜难度适中又给人层层惊喜","addedAt":1780989822415,"_migrated":true},{"id":"steam_3300800","name":"Her Trees","appId":"3300800","genre":"解谜","rating":9.2,"review":"非常巧妙唯美的解谜，把拼图玩出花","addedAt":1780989822427,"_migrated":true},{"id":"steam_1629520","name":"A Little to the Left","appId":"1629520","genre":"解谜","rating":6,"review":"比较无聊，及格线水准","addedAt":1780989822427,"_migrated":true},{"id":"steam_638230","name":"Journey","appId":"638230","genre":"冒险","rating":9.7,"review":"路过的旅人，真的是屏幕另一端的，生命中的过客。全程一直在微笑","addedAt":1780989822427,"_migrated":true},{"id":"steam_1332010","name":"Stray","appId":"1332010","genre":"解谜","rating":9.2,"review":"结尾给人一种怅然若失的感觉，猫猫+科幻题材新颖","addedAt":1780989822427,"_migrated":true},{"id":"steam_1057090","name":"Ori","appId":"1057090","genre":"冒险","rating":8.2,"review":"画风可以，但比较无聊，没有让人惊艳","addedAt":1780989822427,"_migrated":true},{"id":"steam_648800","name":"Raft","appId":"648800","genre":"大型多人在线","rating":6,"review":"无聊","addedAt":1780989822438,"_migrated":true},{"id":"steam_1644940","name":"Loddlenaut","appId":"1644940","genre":"冒险","rating":7.5,"review":"保护海洋~画风可爱","addedAt":1780989822438,"_migrated":true},{"id":"steam_1568400","name":"Sheepy","appId":"1568400","genre":"冒险","rating":8.3,"review":"手柄体验良好","addedAt":1780989822438,"_migrated":true},{"id":"steam_1395520","name":"Eldritch House","appId":"1395520","genre":"解谜","rating":8.6,"review":"是个佳作，但类奥伯拉丁的游戏我真的玩不下去","addedAt":1780989822438,"_migrated":true},{"id":"steam_1943950","name":"逃离后室","appId":"1943950","genre":"大型多人在线","rating":3.6,"review":"垃圾","addedAt":1780989822438,"_migrated":true}];
-
-let games = [];
-let editingId = null;
-let vdfResolveQueue = [];
-let vdfResolveRunning = false;
-let currentSort = 'rating-desc'; // default sort
-
-function loadGames() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      games = JSON.parse(stored);
-    } else if (DEFAULT_GAMES.length > 0) {
-      // First visit: seed with the shared library (deep copy so mutations stay in localStorage)
-      games = JSON.parse(JSON.stringify(DEFAULT_GAMES));
-    } else {
-      games = [];
-    }
-    // Migrate old 5-star ratings to 10-point scale
-    let migrated = false;
-    for (const g of games) {
-      if (g.rating > 0 && g.rating <= 5 && !g._migrated) {
-        g.rating = g.rating * 2;
-        g._migrated = true;
-        migrated = true;
-      }
-    }
-    if (migrated) saveGames();
-  } catch (e) { games = []; }
-}
-function saveGames() { localStorage.setItem(STORAGE_KEY, JSON.stringify(games)); }
-
-// ==================== COVER URL ====================
-let coverCache = {};
-
-function getCoverUrl(appId) {
-  if (!appId || !/^\d+$/.test(String(appId).trim())) return '';
-  return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
-}
-function getCoverFallback(appId) {
-  if (!appId || !/^\d+$/.test(String(appId).trim())) return '';
-  return `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`;
-}
-
-function coverOnError(img) {
-  const appId = img.dataset.appid;
-  if (!appId) { img.style.display = 'none'; return; }
-  const fbIdx = parseInt(img.dataset.fallback || '0');
-  const fallbacks = [
-    `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`,
-    `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`,
-    `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`,
-  ];
-  if (fbIdx < fallbacks.length) {
-    img.src = fallbacks[fbIdx];
-    img.dataset.fallback = String(fbIdx + 1);
-    return;
-  }
-  // All CDN fallbacks exhausted — try Steam store API for new-style covers
-  if (coverCache[appId]) { img.src = coverCache[appId]; return; }
-  if (img.dataset.resolving === '1') return;
-  img.dataset.resolving = '1';
-  resolveCoverViaApi(appId).then(url => {
-    if (url) { img.src = url; coverCache[appId] = url; }
-    else { img.style.display = 'none'; if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex'; }
-  });
-}
-
-async function resolveCoverViaApi(appId) {
-  const storeUrl = `https://store.steampowered.com/api/appdetails?appids=${appId}&l=zh-CN`;
-  const urls = [
-    `https://corsproxy.io/?${encodeURIComponent(storeUrl)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(storeUrl)}`,
-    `https://cors-anywhere-rose.vercel.app/${storeUrl}`,
-    `https://proxy.cors.sh/${storeUrl}`,
-    `https://cors.eu.org/${storeUrl}`,
-    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(storeUrl)}`,
-  ];
-  for (const url of urls) {
-    try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 8000);
-      const resp = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(t);
-      if (!resp.ok) continue;
-      const data = await resp.json();
-      const header = data?.[appId]?.data?.header_image;
-      if (header) return header;
-    } catch (e) { continue; }
-  }
-  return null;
-}
-function extractAppId(input) {
-  if (!input) return null;
-  const s = input.trim();
-  if (/^\d+$/.test(s)) return s;
-  const m = s.match(/steam(?:community|powered)?\.com\/app\/(\d+)/i);
-  return m ? m[1] : null;
-}
-
-// ==================== RATING DISPLAY ====================
-function ratingClass(val) {
-  if (val <= 0) return 'unset';
-  if (val < 4) return 'bad';
-  if (val < 6.5) return 'mid';
-  if (val < 8.5) return 'good';
-  return 'great';
-}
-function formatRating(val) {
-  if (!val || val <= 0) return '未评';
-  return val.toFixed(1);
-}
-
-// ==================== VDF PARSER ====================
-function parseVDF(text) {
-  const appIds = new Set();
-  // Method 1: Find "Apps" block and extract numeric keys
-  const appsBlockRegex = /"Apps"\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}/gi;
-  let m;
-  while ((m = appsBlockRegex.exec(text)) !== null) {
-    const idRegex = /"(\d{3,7})"\s*\{/g;
-    let idM;
-    while ((idM = idRegex.exec(m[1])) !== null) appIds.add(idM[1]);
-  }
-  // Method 2: All numeric keys that look like app IDs
-  const allIds = /"(\d{3,7})"\s*\{/g;
-  while ((m = allIds.exec(text)) !== null) {
-    const n = parseInt(m[1]);
-    if (n >= 10) appIds.add(m[1]);
-  }
-  return [...appIds];
-}
-
-function handleVdfFile(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    const text = e.target.result;
-    const progress = document.getElementById('vdfProgress');
-    const status = document.getElementById('vdfStatusText');
-    const bar = document.getElementById('vdfBar');
-    const log = document.getElementById('vdfLog');
-
-    progress.style.display = 'block';
-    status.textContent = '🔍 正在解析 VDF 文件...';
-    bar.style.width = '10%';
-    log.innerHTML = '';
-
-    const appIds = parseVDF(text);
-    if (appIds.length === 0) {
-      status.textContent = '⚠️ 未找到游戏 App ID，请确认文件正确';
-      bar.style.width = '100%';
-      return;
-    }
-
-    log.innerHTML += `<div>📄 文件: ${file.name}</div>`;
-    log.innerHTML += `<div>📊 解析到 ${appIds.length} 个 App ID</div>`;
-
-    const existingAppIds = new Set(games.map(g => g.appId).filter(Boolean));
-    const newIds = appIds.filter(id => !existingAppIds.has(id));
-    const skipped = appIds.length - newIds.length;
-
-    if (skipped > 0) log.innerHTML += `<div class="log-skip">⏭️ ${skipped} 款已在库中，跳过</div>`;
-    if (newIds.length === 0) {
-      status.textContent = '✅ 所有游戏已在库中';
-      bar.style.width = '100%';
-      return;
-    }
-
-    status.textContent = `📥 正在导入 ${newIds.length} 款游戏...`;
-    bar.style.width = '30%';
-
-    for (let i = 0; i < newIds.length; i++) {
-      games.push({
-        id: 'steam_' + newIds[i],
-        name: 'Game ' + newIds[i],
-        appId: newIds[i],
-        genre: '其他',
-        rating: 0,
-        review: '',
-        addedAt: Date.now(),
-        _migrated: true
-      });
-      if (i % 10 === 0) { bar.style.width = (30 + 40 * (i / newIds.length)) + '%'; await sleep(10); }
-    }
-
-    saveGames();
-    bar.style.width = '70%';
-    log.innerHTML += `<div class="log-ok">✅ 已导入 ${newIds.length} 款（封面自动加载）</div>`;
-
-    // Start name resolution
-    status.textContent = '🔄 正在查询游戏名称...';
-    log.innerHTML += '<div>🔍 正在通过 Steam 商店查询游戏名称...</div>';
-    vdfResolveQueue = newIds.slice();
-    startVdfNameResolver();
-
-    bar.style.width = '100%';
-    status.textContent = `✅ 导入完成！新增 ${newIds.length} 款`;
-    render();
-    showToast(`✅ 导入 ${newIds.length} 款游戏，名称后台查询中...`, 'success');
-  };
-  reader.readAsText(file);
-}
-
-async function startVdfNameResolver() {
-  if (vdfResolveRunning) return;
-  vdfResolveRunning = true;
-  let resolvedCount = 0;
-  const total = vdfResolveQueue.length;
-
-  while (vdfResolveQueue.length > 0) {
-    const batch = vdfResolveQueue.splice(0, 3);
-    const results = await Promise.all(batch.map(id => resolveGameName(id)));
-    resolvedCount += results.filter(Boolean).length;
-    saveGames();
-    render();
-    // Update progress in the log if visible
-    const log = document.getElementById('vdfLog');
-    if (log && log.style.display !== 'none') {
-      log.innerHTML += `<div class="log-ok">✅ 已识别 ${resolvedCount}/${total} 款名称</div>`;
-    }
-    await sleep(800); // rate limit between batches
-  }
-
-  vdfResolveRunning = false;
-
-  // If some names unresolved, show batch resolve modal
-  const unresolved = games.filter(g => g.name.startsWith('Game ') && g.appId);
-  if (unresolved.length > 0) {
-    showToast(`🔄 ${unresolved.length} 款未识别，可手动补全名称`, 'info');
-  }
-}
-
-async function resolveGameName(appId) {
-  // Strategy 1: Try store API directly (works from some origins)
-  const storeUrl = `https://store.steampowered.com/api/appdetails?appids=${appId}&l=zh-CN`;
-
-  // Proxy chain — try multiple services
-  const urls = [
-    storeUrl, // direct (might work from file:// or with extensions)
-    `https://corsproxy.io/?${encodeURIComponent(storeUrl)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(storeUrl)}`,
-    `https://cors-anywhere-rose.vercel.app/${storeUrl}`,
-    `https://proxy.cors.sh/${storeUrl}`,
-    `https://cors.eu.org/${storeUrl}`,
-  ];
-
-  for (const url of urls) {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
-      const resp = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeout);
-      if (!resp.ok) continue;
-      const data = await resp.json();
-      const info = data?.[appId]?.data;
-      if (info && info.name) {
-        const game = games.find(g => g.appId === String(appId));
-        if (game && game.name.startsWith('Game ')) {
-          game.name = info.name;
-          // Try to guess genre
-          if (info.genres && info.genres.length > 0) {
-            const genreMap = {
-              'Action':'动作','Adventure':'冒险','RPG':'角色扮演','Strategy':'策略',
-              'Simulation':'模拟','Racing':'竞速','Sports':'体育',
-              'FPS':'射击','Horror':'恐怖','Puzzle':'解谜','Survival':'生存',
-              'Open World':'开放世界','Stealth':'潜行','Roguelike':'Roguelike',
-              'Indie':'独立游戏','Visual Novel':'视觉小说',
-              'MMO':'大型多人在线','MOBA':'MOBA','RTS':'即时战略',
-              'Tower Defense':'塔防','Card Game':'卡牌',
-              'Sci-fi':'科幻','Fantasy':'奇幻','Casual':'休闲','Fighting':'格斗'
-            };
-            for (const g of info.genres) {
-              const cn = genreMap[g.description];
-              if (cn && GENRES.includes(cn)) { game.genre = cn; break; }
-            }
-          }
-          return game.name;
-        }
-      }
-    } catch (e) { continue; }
-  }
-  return null;
-}
-
-// ==================== RENDER ====================
-function render() {
-  const search = (document.getElementById('searchInput').value || '').toLowerCase().trim();
-  const genreFilter = document.getElementById('genreFilter').value;
-  const sortBy = currentSort;
-
-  let filtered = [...games];
-  if (search) filtered = filtered.filter(g => g.name.toLowerCase().includes(search));
-  if (genreFilter) filtered = filtered.filter(g => g.genre === genreFilter);
-
-  switch (sortBy) {
-    case 'rating-desc': filtered.sort((a, b) => b.rating - a.rating); break;
-    case 'rating-asc': filtered.sort((a, b) => a.rating - b.rating); break;
-    case 'name': filtered.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN')); break;
-    case 'name-desc': filtered.sort((a, b) => b.name.localeCompare(a.name, 'zh-CN')); break;
-    default: filtered.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0)); break;
-  }
-
-  // Stats
-  const total = games.length;
-  const totalGenres = new Set(games.map(g => g.genre)).size;
-  const rated = games.filter(g => g.rating > 0);
-  const avg = rated.length > 0 ? (rated.reduce((s, g) => s + g.rating, 0) / rated.length).toFixed(1) : '--';
-  const unresolved = games.filter(g => g.name.startsWith('Game ') && g.appId).length;
-
-  document.getElementById('statsBar').innerHTML = `
-    <div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">🎮 收录游戏</div></div>
-    <div class="stat-card"><div class="stat-value">${totalGenres}</div><div class="stat-label">📂 涵盖类型</div></div>
-    <div class="stat-card"><div class="stat-value">⭐ ${avg}</div><div class="stat-label">平均评分 (${rated.length} 款已评)</div></div>
-    ${unresolved > 0 ? `<div class="stat-card" style="border-color:var(--warning);cursor:pointer" onclick="openBatchResolve()">
-      <div class="stat-value" style="color:var(--warning)">${unresolved}</div><div class="stat-label">🔄 待识别名称</div>
-    </div>` : ''}
-  `;
-
-  // Genre filter
-  const gf = document.getElementById('genreFilter');
-  const curG = gf.value;
-  const usedG = new Set(games.map(g => g.genre));
-  gf.innerHTML = '<option value="">全部类型</option>' +
-    GENRES.filter(g => usedG.has(g)).map(g =>
-      `<option value="${g}">${g} (${games.filter(x => x.genre === g).length})</option>`
-    ).join('');
-  gf.value = curG;
-
-  // Grid
-  const grid = document.getElementById('gameGrid');
-  if (filtered.length === 0) {
-    grid.innerHTML = `
-      <div class="empty-state">
-        <span class="icon">📭</span>
-        <h3>${games.length === 0 ? '游戏陈列库还是空的' : '没有匹配的游戏'}</h3>
-        <p>${games.length === 0 ? '点击「🔄 从 Steam 导入」选择本地 VDF 文件' : '试试调整筛选条件？'}</p>
-        ${games.length === 0 ? '<button class="btn btn-accent" onclick="openSyncModal()">🔄 从 Steam 导入</button>' : ''}
-      </div>`;
-  } else {
-    grid.innerHTML = filtered.map(g => {
-      const cover = getCoverUrl(g.appId);
-      const fb = getCoverFallback(g.appId);
-      const isPlaceholder = g.name.startsWith('Game ') && g.appId;
-      const rCls = ratingClass(g.rating);
-      return `
-        <div class="game-card">
-          <div class="card-cover">
-            ${cover ? `<img src="${cover}" alt="${g.name}" loading="lazy"
-              data-appid="${g.appId}" data-fallback="0"
-              onerror="coverOnError(this)"
-            >` : ''}
-            <span class="fallback-icon" style="${cover?'display:none':'display:flex'}">🎮</span>
-            ${g.rating > 0 ? `<div class="rating-badge ${rCls}">⭐ ${g.rating.toFixed(1)}</div>` : ''}
+        <form id="steamApiForm">
+          <div class="field-row">
+            <label class="field">
+              <span>Steam Web API Key</span>
+              <input id="steamApiKey" type="password" required maxlength="64" autocomplete="off" spellcheck="false">
+            </label>
+            <label class="field">
+              <span>Steam ID（17 位）</span>
+              <input id="steamId" required inputmode="numeric" pattern="\d{17}" maxlength="17" autocomplete="off">
+            </label>
           </div>
-          <div class="card-body">
-            <div class="card-title">${isPlaceholder ? g.name + ' 🔄' : g.name}</div>
-            <span class="card-genre">${g.genre}</span>
-            ${g.review ? `<div class="card-review">${g.review}</div>` : '<div class="card-review empty">暂无评价</div>'}
-            <div class="card-footer">
-              <button class="btn btn-secondary btn-sm" onclick="openGameModal('${g.id}')">✏️ 编辑</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteGame('${g.id}')">🗑️ 删除</button>
-            </div>
-          </div>
-        </div>`;
-    }).join('');
-  }
+          <p class="form-status" id="apiStatus" aria-live="polite"></p>
+          <button class="button button--accent button--full" type="submit">同步游戏库</button>
+        </form>
+      </section>
+    </div>
+  </dialog>
 
-  document.getElementById('resultCount').textContent =
-    filtered.length !== games.length ? `显示 ${filtered.length} / ${games.length} 款` : '';
-}
+  <dialog class="dialog dialog--wide" id="resolveDialog" aria-labelledby="resolveDialogTitle">
+    <header class="dialog__header">
+      <div>
+        <p class="eyebrow">MANUAL REVIEW</p>
+        <h2 id="resolveDialogTitle">补全游戏名称</h2>
+      </div>
+      <button class="icon-button" type="button" data-close-dialog="resolveDialog" aria-label="关闭">×</button>
+    </header>
+    <form id="resolveForm">
+      <div class="dialog__body">
+        <p class="muted">自动查询失败的条目可以在这里手动命名。</p>
+        <div class="table-scroll">
+          <table class="resolve-table">
+            <thead><tr><th>封面</th><th>App ID</th><th>游戏名称</th></tr></thead>
+            <tbody id="resolveTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <footer class="dialog__footer">
+        <button class="button button--secondary" id="retryResolve" type="button">重新自动查询</button>
+        <button class="button button--primary" type="submit">保存名称</button>
+      </footer>
+    </form>
+  </dialog>
 
-// ==================== SORT PILLS ====================
-function updateSortPills() {
-  const sort = document.getElementById('sortBy').value;
-  currentSort = sort;
-  document.querySelectorAll('.sort-pill').forEach(p => {
-    p.classList.toggle('active', p.dataset.sort === sort);
-  });
-}
+  <dialog class="dialog dialog--wide" id="orderDialog" aria-labelledby="orderDialogTitle">
+    <header class="dialog__header">
+      <div><p class="eyebrow">MY COLLECTION ORDER</p><h2 id="orderDialogTitle">管理排序</h2></div>
+      <button class="icon-button" type="button" data-close-dialog="orderDialog" aria-label="关闭">×</button>
+    </header>
+    <div class="dialog__body">
+      <p class="muted">上下移动，或输入目标名次后点击「移动」。前三款会在殿堂展示，其余按顺序进入卡册；档次保持不变。</p>
+      <label class="field"><span>查找游戏</span><input id="orderSearch" type="search" placeholder="搜索名称，名次仍按全库计算"></label>
+      <ol class="order-list" id="orderList" aria-label="全部游戏顺序"></ol>
+    </div>
+    <footer class="dialog__footer order-footer">
+      <span id="orderStatus" class="muted" role="status"></span>
+      <button class="button button--secondary" type="button" data-close-dialog="orderDialog">取消</button>
+      <button class="button button--primary" id="saveOrder" type="button">保存排序</button>
+    </footer>
+  </dialog>
 
-document.getElementById('sortPills').addEventListener('click', e => {
-  const pill = e.target.closest('.sort-pill');
-  if (!pill) return;
-  currentSort = pill.dataset.sort;
-  document.getElementById('sortBy').value = currentSort;
-  document.querySelectorAll('.sort-pill').forEach(p => p.classList.toggle('active', p === pill));
-  render();
-});
-
-// ==================== GAME MODAL ====================
-function populateGenreSelect() {
-  const sel = document.getElementById('gameGenre');
-  sel.innerHTML = GENRES.map(g => `<option value="${g}">${g}</option>`).join('');
-}
-
-function updateRatingDisplay() {
-  const slider = document.getElementById('ratingSlider');
-  const display = document.getElementById('ratingDisplay');
-  const val = parseFloat(slider.value);
-  display.textContent = formatRating(val);
-  display.className = 'rating-display ' + ratingClass(val);
-}
-
-function openGameModal(gameId) {
-  editingId = gameId || null;
-  document.getElementById('gameModalTitle').textContent = gameId ? '编辑游戏' : '添加游戏';
-  document.getElementById('saveGameBtn').textContent = gameId ? '💾 保存修改' : '💾 添加';
-
-  if (gameId) {
-    const g = games.find(x => x.id === gameId);
-    if (g) {
-      document.getElementById('gameName').value = g.name.startsWith('Game ') && g.appId ? '' : g.name;
-      document.getElementById('coverInput').value = g.appId ? `https://store.steampowered.com/app/${g.appId}/` : '';
-      document.getElementById('gameAppId').value = g.appId || '';
-      document.getElementById('gameGenre').value = g.genre;
-      document.getElementById('gameReview').value = g.review || '';
-      document.getElementById('ratingSlider').value = g.rating || 0;
-      updateRatingDisplay();
-      const preview = document.getElementById('coverPreview');
-      if (g.appId) {
-        const coverUrl = coverCache[g.appId] || getCoverUrl(g.appId);
-        preview.innerHTML = `<img src="${coverUrl}" alt="${g.name}" loading="lazy"
-          data-appid="${g.appId}" data-fallback="0"
-          onerror="coverOnError(this)">`;
-      }
-    }
-  } else {
-    document.getElementById('gameName').value = '';
-    document.getElementById('coverInput').value = '';
-    document.getElementById('gameAppId').value = '';
-    document.getElementById('gameGenre').value = GENRES[0];
-    document.getElementById('gameReview').value = '';
-    document.getElementById('ratingSlider').value = 0;
-    updateRatingDisplay();
-    document.getElementById('coverPreview').innerHTML = '<span class="placeholder">⬆ 粘贴 Steam 链接，封面自动出现</span>';
-  }
-  document.getElementById('searchResults').style.display = 'none';
-  document.getElementById('gameModalOverlay').style.display = 'flex';
-}
-function closeGameModal() { document.getElementById('gameModalOverlay').style.display = 'none'; editingId = null; }
-
-function saveGame() {
-  const name = document.getElementById('gameName').value.trim();
-  const appId = document.getElementById('gameAppId').value.trim();
-  const genre = document.getElementById('gameGenre').value;
-  const review = document.getElementById('gameReview').value.trim();
-  const rating = parseFloat(document.getElementById('ratingSlider').value) || 0;
-
-  if (!name) { showToast('⚠️ 请输入游戏名称', 'error'); return; }
-
-  if (editingId) {
-    const g = games.find(x => x.id === editingId);
-    if (g) Object.assign(g, { name, appId, genre, rating, review, _migrated: true });
-  } else {
-    games.push({
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
-      name, appId, genre, rating, review, addedAt: Date.now(), _migrated: true
-    });
-  }
-  saveGames();
-  closeGameModal();
-  render();
-  showToast(editingId ? '✅ 游戏信息已更新' : '🎉 游戏已添加', 'success');
-  editingId = null;
-}
-
-function deleteGame(gameId) {
-  const g = games.find(x => x.id === gameId);
-  if (!g || !confirm(`确定删除「${g.name}」？`)) return;
-  games = games.filter(x => x.id !== gameId);
-  saveGames();
-  render();
-  showToast(`已删除「${g.name}」`, 'success');
-}
-
-// ==================== EXPORT / IMPORT ====================
-function exportData() {
-  const blob = new Blob([JSON.stringify(games, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `steam-library-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-  showToast('📥 数据已导出', 'success');
-}
-function importData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (!Array.isArray(data)) throw new Error('格式错误');
-      const existIds = new Set(games.map(g => g.id));
-      const existAppIds = new Set(games.map(g => g.appId).filter(Boolean));
-      const newItems = data.filter(d => !existIds.has(d.id) && (!d.appId || !existAppIds.has(d.appId)));
-      games = [...games, ...newItems];
-      saveGames();
-      render();
-      showToast(`📤 导入 ${newItems.length} 款新游戏`, 'success');
-    } catch (err) { showToast('⚠️ 导入失败：文件格式不正确', 'error'); }
-  };
-  reader.readAsText(file);
-  event.target.value = '';
-}
-
-// ==================== BATCH RESOLVE ====================
-function openBatchResolve() {
-  const unresolved = games.filter(g => g.name.startsWith('Game ') && g.appId);
-  if (unresolved.length === 0) { showToast('所有游戏名称已识别 ✅', 'success'); return; }
-  document.getElementById('batchResolveOverlay').style.display = 'flex';
-  document.getElementById('batchTbody').innerHTML = unresolved.map(g => `
-    <tr data-id="${g.id}">
-      <td><img src="${getCoverUrl(g.appId)}" loading="lazy"
-        data-appid="${g.appId}" data-fallback="0"
-        onerror="coverOnError(this)"></td>
-      <td style="color:var(--text-muted);font-family:monospace">${g.appId}</td>
-      <td><input type="text" value="" placeholder="输入游戏名称"></td>
-    </tr>
-  `).join('');
-}
-function closeBatchResolve() { document.getElementById('batchResolveOverlay').style.display = 'none'; }
-
-function saveBatchResolve() {
-  const rows = document.querySelectorAll('#batchTbody tr');
-  let updated = 0;
-  rows.forEach(row => {
-    const id = row.dataset.id;
-    const input = row.querySelector('input');
-    const name = input.value.trim();
-    if (name) {
-      const g = games.find(x => x.id === id);
-      if (g) { g.name = name; updated++; }
-    }
-  });
-  saveGames();
-  render();
-  closeBatchResolve();
-  if (updated > 0) showToast(`✅ 已更新 ${updated} 款游戏名称`, 'success');
-  // Continue auto-resolving remaining
-  const unresolved = games.filter(g => g.name.startsWith('Game ') && g.appId);
-  if (unresolved.length > 0) {
-    vdfResolveQueue = unresolved.map(g => g.appId);
-    startVdfNameResolver();
-  }
-}
-
-async function retryResolveNames() {
-  const unresolved = games.filter(g => g.name.startsWith('Game ') && g.appId);
-  if (unresolved.length === 0) return;
-  vdfResolveQueue = unresolved.map(g => g.appId);
-  startVdfNameResolver();
-  showToast(`🔄 正在重新查询 ${unresolved.length} 款游戏名称...`, 'info');
-}
-
-// ==================== COVER INPUT ====================
-let searchTimeout = null;
-async function onCoverInput() {
-  const input = document.getElementById('coverInput').value.trim();
-  const preview = document.getElementById('coverPreview');
-  const results = document.getElementById('searchResults');
-  const appIdHidden = document.getElementById('gameAppId');
-  const appId = extractAppId(input);
-
-  if (appId) {
-    appIdHidden.value = appId;
-    const coverSrc = coverCache[appId] || getCoverUrl(appId);
-    preview.innerHTML = `<img src="${coverSrc}" alt="封面" loading="lazy"
-      data-appid="${appId}" data-fallback="0"
-      onerror="coverOnError(this)">`;
-    results.style.display = 'none';
-    return;
-  }
-  appIdHidden.value = '';
-  if (!input) {
-    preview.innerHTML = '<span class="placeholder">⬆ 粘贴 Steam 链接，封面自动出现</span>';
-    results.style.display = 'none';
-    return;
-  }
-  preview.innerHTML = '<span class="placeholder">💡 粘贴完整 Steam 商店链接即可提取封面</span>';
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => searchSteam(input), 400);
-}
-
-async function searchSteam(query) {
-  const results = document.getElementById('searchResults');
-  if (!query || query.length < 2) { results.style.display = 'none'; return; }
-  results.style.display = 'block';
-  results.innerHTML = '<div class="loading">🔍 搜索中...</div>';
-  try {
-    const resp = await fetch(`https://steamcommunity.com/actions/SearchApps/${encodeURIComponent(query)}`);
-    if (!resp.ok) throw new Error('Network');
-    const data = await resp.json();
-    if (!Array.isArray(data) || data.length === 0) {
-      results.innerHTML = '<div class="loading">未找到匹配游戏</div>'; return;
-    }
-    results.innerHTML = data.slice(0, 8).map(g => `
-      <div class="item" onclick="selectSearchResult('${g.appid}','${g.name.replace(/'/g,"\\'")}')">
-        <img src="${getCoverUrl(g.appid)}" loading="lazy" onerror="this.style.display='none'" alt="">
-        <span class="item-name">${g.name}</span>
-        <span style="font-size:0.7rem;color:var(--text-muted);flex-shrink:0">ID:${g.appid}</span>
-      </div>`).join('');
-  } catch (e) {
-    results.innerHTML = `<div class="loading" style="padding:14px">
-      ⚠️ 搜索受限。在 <a href="https://store.steampowered.com/search/?term=${encodeURIComponent(query)}" target="_blank" style="color:var(--accent)">Steam 商店</a> 搜索后粘贴链接即可
-    </div>`;
-  }
-}
-
-function selectSearchResult(appId, name) {
-  document.getElementById('coverInput').value = `https://store.steampowered.com/app/${appId}/`;
-  document.getElementById('gameAppId').value = appId;
-  if (!document.getElementById('gameName').value) document.getElementById('gameName').value = name;
-  const preview = document.getElementById('coverPreview');
-  const coverSrc = coverCache[appId] || getCoverUrl(appId);
-  preview.innerHTML = `<img src="${coverSrc}" alt="${name}" loading="lazy"
-    data-appid="${appId}" data-fallback="0"
-    onerror="coverOnError(this)">`;
-  document.getElementById('searchResults').style.display = 'none';
-}
-
-// ==================== SYNC MODAL ====================
-function switchSyncTab(tab) {
-  document.querySelectorAll('#syncModalOverlay .tab-btn').forEach(b => b.classList.toggle('active', false));
-  document.querySelectorAll('#syncModalOverlay .tab-panel').forEach(p => p.classList.toggle('active', false));
-  event.target.classList.add('active');
-  document.getElementById(tab === 'vdf' ? 'tabVdf' : 'tabApi').classList.add('active');
-}
-function openSyncModal() {
-  document.getElementById('syncModalOverlay').style.display = 'flex';
-  document.getElementById('syncApiKey').value = localStorage.getItem('steam_api_key') || '';
-  document.getElementById('syncSteamId').value = localStorage.getItem('steam_id') || '';
-  document.getElementById('apiStatus').className = 'status-box';
-  document.getElementById('apiStatus').textContent = '';
-  document.getElementById('apiManualArea').style.display = 'none';
-  document.getElementById('vdfProgress').style.display = 'none';
-}
-function closeSyncModal() { document.getElementById('syncModalOverlay').style.display = 'none'; }
-
-// ==================== API SYNC ====================
-async function syncFromAPI() {
-  const apiKey = document.getElementById('syncApiKey').value.trim();
-  const steamId = document.getElementById('syncSteamId').value.trim();
-  const status = document.getElementById('apiStatus');
-  if (!apiKey) { status.className = 'status-box error'; status.textContent = '⚠️ 请输入 API Key'; return; }
-  if (!steamId) { status.className = 'status-box error'; status.textContent = '⚠️ 请输入 Steam ID'; return; }
-  localStorage.setItem('steam_api_key', apiKey);
-  localStorage.setItem('steam_id', steamId);
-
-  status.className = 'status-box loading';
-  status.textContent = '⏳ 正在连接 Steam API...';
-
-  const apiUrl = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${steamId}&include_appinfo=true&include_played_free_games=true&format=json`;
-  const proxyUrls = [
-    apiUrl,
-    `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`,
-  ];
-
-  let lastErr = '';
-  for (const url of proxyUrls) {
-    try {
-      const resp = await fetch(url);
-      if (!resp.ok) { lastErr = `HTTP ${resp.status}`; continue; }
-      const data = await resp.json();
-      if (!data.response?.games) { lastErr = '响应格式错误'; continue; }
-
-      const existAppIds = new Set(games.map(g => g.appId).filter(Boolean));
-      let added = 0;
-      for (const sg of data.response.games) {
-        if (existAppIds.has(String(sg.appid))) continue;
-        const hours = Math.round((sg.playtime_forever || 0) / 60);
-        games.push({
-          id: 'steam_' + sg.appid, name: sg.name || `Game ${sg.appid}`,
-          appId: String(sg.appid), genre: '其他', rating: 0,
-          review: hours > 0 ? `Steam 游玩时长：${hours} 小时` : '',
-          addedAt: Date.now(), _migrated: true
-        });
-        added++;
-      }
-      saveGames(); render();
-      status.className = 'status-box success';
-      status.textContent = `✅ 同步完成！新增 ${added} 款（总计 ${games.length} 款）`;
-      showToast(`✅ 同步 ${added} 款游戏`, 'success');
-      return;
-    } catch (e) { lastErr = e.message; continue; }
-  }
-
-  status.className = 'status-box error';
-  status.innerHTML = `<div><strong>⚠️ 自动请求失败</strong></div><div style="font-size:0.8rem">请手动获取：</div>`;
-  const ma = document.getElementById('apiManualArea');
-  ma.style.display = 'block';
-  ma.querySelector('textarea').placeholder = `1. 打开: ${apiUrl}\n2. 复制全部 JSON\n3. 粘贴到这里`;
-}
-
-async function apiManualImport() {
-  const raw = document.getElementById('apiManualJson').value.trim();
-  if (!raw) { showToast('请先粘贴 JSON 数据', 'error'); return; }
-  try {
-    const data = JSON.parse(raw);
-    if (!data.response?.games) throw new Error('格式错误');
-    const existAppIds = new Set(games.map(g => g.appId).filter(Boolean));
-    let added = 0;
-    for (const sg of data.response.games) {
-      if (existAppIds.has(String(sg.appid))) continue;
-      const hours = Math.round((sg.playtime_forever || 0) / 60);
-      games.push({
-        id: 'steam_' + sg.appid, name: sg.name || `Game ${sg.appid}`,
-        appId: String(sg.appid), genre: '其他', rating: 0,
-        review: hours > 0 ? `Steam 游玩时长：${hours} 小时` : '',
-        addedAt: Date.now(), _migrated: true
-      });
-      added++;
-    }
-    saveGames(); render();
-    showToast(`✅ 导入 ${added} 款游戏`, 'success');
-    closeSyncModal();
-  } catch (e) { showToast('⚠️ JSON 格式不正确', 'error'); }
-}
-
-// ==================== UTILS ====================
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-let toastTimer;
-function showToast(msg, type) {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  toast.textContent = msg;
-  container.appendChild(toast);
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-// ==================== KEYBOARD ====================
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeGameModal(); closeSyncModal(); closeBatchResolve(); }
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); document.getElementById('searchInput').focus(); }
-});
-document.addEventListener('click', e => {
-  const results = document.getElementById('searchResults');
-  const coverInput = document.getElementById('coverInput');
-  if (results && coverInput && !coverInput.contains(e.target) && !results.contains(e.target)) {
-    results.style.display = 'none';
-  }
-});
-
-// ==================== INIT ====================
-populateGenreSelect();
-loadGames();
-render();
-
-console.log('🎮 Steam 游戏陈列库 v3 — 10分制评分');
-</script>
+  <script type="module" src="./src/app.js"></script>
 </body>
 </html>

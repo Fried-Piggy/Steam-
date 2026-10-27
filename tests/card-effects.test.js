@@ -1,0 +1,185 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { bindCardEffects } from '../src/card-effects.js';
+
+// A tiny event/style adapter exercises the real pointer controller without a browser dependency.
+test('card tilt coalesces frames, follows the pointer, resets, and respects reduced motion', (t) => {
+  function target() {
+    const listeners = new Map();
+    return {
+      addEventListener(name, callback) {
+        const list = listeners.get(name) ?? [];
+        list.push(callback);
+        listeners.set(name, list);
+      },
+      emit(name, event = {}) { for (const callback of listeners.get(name) ?? []) callback(event); },
+    };
+  }
+  const motion = { ...target(), matches: false };
+  const hover = { ...target(), matches: true };
+  const win = { ...target(), matchMedia: (query) => query.includes('reduced-motion') ? motion : hover };
+  const doc = target();
+  const root = { ...target(), contains: (node) => node === slot };
+  const styles = new Map();
+  const classes = new Set();
+  const card = { style: { setProperty: (key, value) => styles.set(key, value), removeProperty: (key) => styles.delete(key) } };
+  const slot = {
+    isConnected: true,
+    closest: () => slot,
+    contains: (node) => node === card,
+    querySelector: () => card,
+    getBoundingClientRect: () => ({ left: 100, top: 200, width: 200, height: 400 }),
+    classList: { add: (...values) => values.forEach((value) => classes.add(value)), remove: (...values) => values.forEach((value) => classes.delete(value)) },
+  };
+  let nextFrame = 0;
+  const frames = new Map();
+  const originals = new Map();
+  for (const [key, value] of Object.entries({
+    window: win,
+    document: doc,
+    requestAnimationFrame: (callback) => { frames.set(++nextFrame, callback); return nextFrame; },
+    cancelAnimationFrame: (id) => frames.delete(id),
+  })) {
+    originals.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
+    Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
+  }
+  t.after(() => {
+    for (const [key, descriptor] of originals) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+  });
+  function move(x, y, pointerType = 'mouse') { root.emit('pointermove', { target: slot, clientX: x, clientY: y, pointerType }); }
+  function flush() { for (const [id, callback] of [...frames]) { frames.delete(id); callback(); } }
+
+  const effects = bindCardEffects(root);
+  move(150, 250);
+  move(300, 200);
+  assert.equal(frames.size, 1, 'pointer bursts schedule one frame');
+  flush();
+  assert.equal(styles.get('--rotate-y'), '12.00deg');
+  assert.equal(styles.get('--rotate-x'), '6.50deg');
+  assert.equal(styles.get('--light-x'), '100.00%');
+  assert.equal(styles.get('--light-y'), '0.00%');
+  assert.equal(frames.size, 0, 'no perpetual animation loop');
+
+  move(100, 600);
+  flush();
+  assert.equal(styles.get('--rotate-y'), '-12.00deg');
+  assert.equal(styles.get('--rotate-x'), '-6.50deg');
+  assert.equal(styles.get('--light-x'), '0.00%');
+  root.emit('pointerout', { relatedTarget: card });
+  assert.equal(classes.has('is-inspecting'), true, 'moving between descendants does not reset');
+  root.emit('pointerout', { relatedTarget: null });
+  assert.equal(styles.size, 0);
+  assert.equal(classes.size, 0);
+
+  move(200, 400);
+  effects.reset();
+  assert.equal(frames.size, 0, 'rerender cancels pending work on old cards');
+  motion.matches = true;
+  motion.emit('change');
+  move(300, 200);
+  assert.equal(frames.size, 0);
+  motion.matches = false;
+  move(300, 200, 'touch');
+  assert.equal(frames.size, 0);
+  hover.matches = false;
+  move(300, 200);
+  assert.equal(frames.size, 0);
+});
+
+test('card drag follows the pointer, suppresses its click, and springs back to rest', (t) => {
+  function target() {
+    const listeners = new Map();
+    return {
+      addEventListener(name, callback, options) {
+        const list = listeners.get(name) ?? [];
+        list.push({ callback, capture: options === true || options?.capture });
+        listeners.set(name, list);
+      },
+      emit(name, event = {}) {
+        for (const { callback } of listeners.get(name) ?? []) callback(event);
+      },
+    };
+  }
+  const motion = { ...target(), matches: false };
+  const hover = { ...target(), matches: true };
+  const win = { ...target(), matchMedia: (query) => query.includes('reduced-motion') ? motion : hover };
+  const doc = target();
+  const root = { ...target(), contains: (node) => node === slot };
+  const styles = new Map();
+  const classes = new Set();
+  let captured = null;
+  const card = {
+    style: { setProperty: (key, value) => styles.set(key, value), removeProperty: (key) => styles.delete(key) },
+    closest: (selector) => selector === '.card-slot' ? slot : null,
+    setPointerCapture: (id) => { captured = id; },
+    releasePointerCapture: (id) => { if (captured === id) captured = null; },
+  };
+  const button = { closest: (selector) => selector.includes('button') ? button : selector === '.card-slot' ? slot : null };
+  const slot = {
+    isConnected: true,
+    contains: (node) => node === card || node === button,
+    querySelector: () => card,
+    getBoundingClientRect: () => ({ left: 100, top: 100, width: 240, height: 400 }),
+    classList: {
+      add: (...values) => values.forEach((value) => classes.add(value)),
+      remove: (...values) => values.forEach((value) => classes.delete(value)),
+    },
+  };
+  let nextFrame = 0;
+  let now = 100;
+  const frames = new Map();
+  const originals = new Map();
+  for (const [key, value] of Object.entries({
+    window: win,
+    document: doc,
+    performance: { now: () => now },
+    requestAnimationFrame: (callback) => { frames.set(++nextFrame, callback); return nextFrame; },
+    cancelAnimationFrame: (id) => frames.delete(id),
+  })) {
+    originals.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
+    Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
+  }
+  t.after(() => {
+    for (const [key, descriptor] of originals) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+  });
+  function flushOne(time = now += 16) {
+    const item = frames.entries().next().value;
+    if (!item) return false;
+    const [id, callback] = item;
+    frames.delete(id);
+    callback(time);
+    return true;
+  }
+
+  bindCardEffects(root);
+  root.emit('pointerdown', { target: button, pointerId: 1, pointerType: 'mouse', button: 0, clientX: 130, clientY: 140, timeStamp: 100 });
+  assert.equal(captured, null, 'buttons never start a drag');
+  root.emit('pointerdown', { target: card, pointerId: 2, pointerType: 'mouse', button: 0, clientX: 130, clientY: 140, timeStamp: 100 });
+  assert.equal(captured, 2);
+  let preventedMove = false;
+  root.emit('pointermove', { target: card, pointerId: 2, pointerType: 'mouse', clientX: 230, clientY: 200, timeStamp: 116, preventDefault: () => { preventedMove = true; } });
+  flushOne();
+  assert.equal(preventedMove, true);
+  assert.equal(classes.has('is-dragging'), true);
+  assert.equal(styles.get('--drag-x'), '100.00px', 'card displacement follows the pointer one-to-one');
+  assert.equal(styles.get('--drag-y'), '60.00px', 'card displacement follows the pointer one-to-one');
+
+  root.emit('pointerup', { pointerId: 2 });
+  assert.equal(captured, null);
+  assert.equal(classes.has('is-returning'), true);
+  let preventedClick = false;
+  root.emit('click', { preventDefault: () => { preventedClick = true; }, stopImmediatePropagation() {} });
+  assert.equal(preventedClick, true, 'the click created by the drag is consumed');
+
+  for (let index = 0; index < 240 && frames.size; index += 1) flushOne(now += 16);
+  assert.equal(frames.size, 0, 'spring stops when the card settles');
+  assert.equal(classes.size, 0);
+  assert.equal(styles.has('--drag-x'), false);
+  assert.equal(styles.has('--drag-y'), false);
+});
