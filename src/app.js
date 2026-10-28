@@ -953,14 +953,18 @@ async function initialize() {
     showToast(`默认游戏库加载失败：${error.message}`, 'error');
   }
 
-  try {
-    const loaded = loadLibrary(defaults);
-    state.games = loaded.games;
-    if (loaded.warning) showToast(loaded.warning, 'error');
-    if (!loaded.warning) localBackup.save(state.games);
-  } catch (error) {
+  if (!isAdminMode) {
     state.games = defaults.map((game) => normalizeGame(game)).filter(Boolean);
-    showToast(`浏览器存储不可用：${error.message}`, 'error');
+  } else {
+    try {
+      const loaded = loadLibrary(defaults);
+      state.games = loaded.games;
+      if (loaded.warning) showToast(loaded.warning, 'error');
+      if (!loaded.warning) localBackup.save(state.games);
+    } catch (error) {
+      state.games = defaults.map((game) => normalizeGame(game)).filter(Boolean);
+      showToast(`浏览器存储不可用：${error.message}`, 'error');
+    }
   }
   render();
 }
