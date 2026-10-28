@@ -38,6 +38,7 @@ src/
   app.js                   页面状态与交互编排
   card-effects.js           卡牌鼠标倾斜与闪卡反光（事件委托、按帧更新）
   cover-palette.js          封面主色提取、配色缓存与镀层颜色应用
+  cover-assets.js           公开封面尺寸与预计算配色清单
   rarity.js                 七档珍藏定义、旧分数换算与档次排序
   domain.js                游戏模型、筛选、合并、VDF 解析等纯逻辑
   storage.js               localStorage 版本迁移与备份格式
@@ -48,13 +49,16 @@ services/cover-proxy.mjs    限定 Steam CDN 的封面读取与有界缓存
 services/library-backup.mjs 本机游戏库备份，保留历史版本并隔离浏览器
 services/local-files.mjs    临时文件写入后原子替换
 tools/legacy/              旧版一次性数据脚本，仅作历史参考
-tools/prepare-public.mjs   发布前同步最新备份与静态封面
+tools/prepare-public.mjs   发布前同步最新备份、压缩封面并自动计算闪卡配色
+tools/image-runtime.mjs    复用项目或 Codex 已安装的 sharp 图像处理环境
 server.mjs                 静态文件服务和本机 Steam API 转发
 ```
 
 ## GitHub Pages 发布
 
-GitHub Pages 使用仓库根目录的静态文件。发布前先在本机管理员模式确认数据已自动备份，然后运行 `npm.cmd run publish:prepare`。该命令会把最新的 `data/backups/*/latest.json` 同步为 `data/default-library.json`，并把对应封面复制到 `assets/covers/`。随后提交并推送 `main`，Pages 会自动重新部署。
+GitHub Pages 使用仓库根目录的静态文件。发布前先在本机管理员模式确认数据已自动备份，然后运行 `npm.cmd run publish:prepare`。该命令会把最新的 `data/backups/*/latest.json` 同步为 `data/default-library.json`，自动生成 320px / 460px WebP 封面和 `assets/covers/manifest.json` 配色清单。每次新增游戏都会自动参与处理，无需手动提色。压缩图使用内容指纹命名，更新封面后浏览器会下载新版本。图像处理复用项目或 Codex 中已有的 sharp；其他电脑可先在项目中安装 sharp。
+
+随后运行 `git add -A`、`git commit -m "更新陈列库"` 和 `git push origin HEAD:main`，Pages 会自动重新部署。
 
 公开页面使用相对资源路径，因此支持 `https://fried-piggy.github.io/Steam-/` 这样的项目子路径。公开模式只读取提交后的默认数据和静态封面，不启用本机管理功能。
 
@@ -64,8 +68,8 @@ GitHub Pages 使用仓库根目录的静态文件。发布前先在本机管理�
 - **收藏卡册**：其余游戏每页十二张，桌面端每行三张、共四行，卡牌尺寸和间距保持不变，带装订环、透明卡套和翻页按钮。搜索、类型筛选和排序会回到第一页；前三名不会重复出现在卡册中，匹配到它们时会有文字提示。
 - **3D 闪卡**：鼠标在卡套内移动时，卡牌以中心沿 X/Y 轴倾斜，镀层与高光跟随鼠标反射，移出后回正。普通卡从实际加载成功的封面提取两个代表色，并生成同色系浅色高光；黑白封面与提色失败使用银色镀层。前三名使用完整彩虹镀层与抛光金银铜卡面。动效只更新当前卡牌，使用 `requestAnimationFrame` 合并事件，静止时无持续动画循环。
 - **弹性拖拽**：桌面端可按住卡牌的非按钮区域拖动，卡套位置保持固定；卡牌会根据拖动方向倾斜，松手后按照释放速度弹性归位，回弹途中也能再次抓取。发生拖动后会吞掉随后的点击，避免误触编辑或删除。
-- **封面提色**：浏览器通过同源 `/api/steam/covers/<App ID>?variant=0..3` 获取像素并缩小至 48×48 采样，最多同时处理三张。成功结果缓存在内存与 `steam_cover_palettes_v1`（最多 128 个配色，有效期七天）。接口只允许固定 Steam CDN 地址、不跟随跳转、只接收 JPEG/PNG/WebP，单图最大 2 MB；服务器缓存上限 16 MB。提色失败不影响封面显示，且不会在鼠标移动时重试。
-- **触屏与减少动态效果**：自动关闭倾斜，保留静态闪卡质感；编辑、删除、翻页可通过键盘或触屏操作。短评可在「查看 / 编辑」中完整阅读。
+- **封面加载与提色**：公开页面自动选择 320px / 460px WebP，前三名立即加载、第一名优先，其余按浏览器懒加载；不再加载重复的模糊背景图。公开页面直接读取发布清单中的配色，无需 Canvas 采样或额外请求。管理员新增游戏后，封面加载成功即从同一张图片自动提色，结果缓存在内存与 `steam_cover_palettes_v1`，七天内复用。发布时所有游戏的配色会自动重新生成。
+- **触屏与减少动态效果**：手指直接滑动卡牌时正常滚页；在卡牌非按钮区域保持约 160ms 后进入拖动，松手使用弹簧回弹。长按前移动超过 8px、滚动已开始、多指操作及系统取消都会让出手势。系统开启「减少动态效果」时禁用拖动动画。
 
 视觉样式位于 `assets/exhibition.css`；表单与弹窗的基础样式仍位于 `assets/styles.css`。
 

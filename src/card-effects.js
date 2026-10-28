@@ -4,6 +4,8 @@ const EFFECT_PROPERTIES = Object.freeze([
 ]);
 
 const DRAG_THRESHOLD = 5;
+const TOUCH_HOLD_MS = 160;
+const TOUCH_SLOP = 8;
 const INTERACTIVE_SELECTOR = 'button, a, input, select, textarea, label, [role="button"]';
 
 /** Delegated hover, drag and spring-return controller. No animation loop runs while cards are idle. */
@@ -13,6 +15,8 @@ export function bindCardEffects(root) {
   let active = null;
   let pointer = null;
   let drag = null;
+  let touchPending = null;
+  let touchTimer = 0;
   let paintFrame = 0;
   let springFrame = 0;
   let spring = null;
@@ -44,10 +48,12 @@ export function bindCardEffects(root) {
   }
 
   function reset() {
+    clearTimeout(touchTimer);
+    touchPending = null;
     cancelFrames();
     const held = drag;
     drag = null;
-    if (held) releaseCapture(cardFor(held.slot), held.pointerId);
+    if (held && !held.touch) releaseCapture(cardFor(held.slot), held.pointerId);
     pointer = null;
     clearCard();
     active = null;
@@ -131,7 +137,7 @@ export function bindCardEffects(root) {
     if (!drag || event.pointerId !== drag.pointerId) return;
     const released = drag;
     drag = null;
-    releaseCapture(cardFor(released.slot), released.pointerId);
+    if (!released.touch) releaseCapture(cardFor(released.slot), released.pointerId);
     if (!released.moved || cancelled || motion.matches) {
       const moved = released.moved;
       reset();
@@ -144,12 +150,7 @@ export function bindCardEffects(root) {
     beginSpring(released);
   }
 
-  root.addEventListener('pointerdown', (event) => {
-    if (motion.matches || !hover.matches || event.pointerType === 'touch' || event.button !== 0) return;
-    if (event.target.closest(INTERACTIVE_SELECTOR)) return;
-    const slot = event.target.closest('.card-slot');
-    if (!slot || !root.contains(slot)) return;
-    event.preventDefault?.();
+  function beginDrag(slot, event, touch = false) {
     let carryX = 0;
     let carryY = 0;
     if (spring) {
@@ -169,6 +170,7 @@ export function bindCardEffects(root) {
     const card = cardFor(slot);
     drag = {
       slot,
+      touch,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
@@ -180,36 +182,51 @@ export function bindCardEffects(root) {
       x: carryX, y: carryY, vx: 0, vy: 0, moved: false,
     };
     pointer = { x: event.clientX, y: event.clientY };
-    try { card.setPointerCapture?.(event.pointerId); } catch { /* window listeners still provide a release fallback */ }
+    if (!touch) {
+      try { card.setPointerCapture?.(event.pointerId); } catch { /* window listeners provide a release fallback */ }
+    }
+  }
+
+  function moveDrag(event) {
+    const samples = event.getCoalescedEvents?.();
+    const sample = samples?.length ? samples[samples.length - 1] : event;
+    const dx = sample.clientX - drag.startX;
+    const dy = sample.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
+      drag.moved = true;
+      drag.slot.classList.add('is-dragging');
+    }
+    if (drag.moved) {
+      event.preventDefault?.();
+      const now = sample.timeStamp || event.timeStamp || performance.now();
+      const dt = Math.max(8, now - drag.lastTime);
+      const instantVx = (sample.clientX - drag.lastX) / dt * 1000;
+      const instantVy = (sample.clientY - drag.lastY) / dt * 1000;
+      drag.vx = drag.vx * 0.65 + instantVx * 0.35;
+      drag.vy = drag.vy * 0.65 + instantVy * 0.35;
+      drag.x = drag.baseX + dx;
+      drag.y = drag.baseY + dy;
+      drag.lastX = sample.clientX;
+      drag.lastY = sample.clientY;
+      drag.lastTime = now;
+      setDragTransform(cardFor(drag.slot), drag.x, drag.y, drag.vx);
+    }
+    pointer = { x: sample.clientX, y: sample.clientY };
+    schedulePaint();
+  }
+
+  root.addEventListener('pointerdown', (event) => {
+    if (motion.matches || !hover.matches || event.pointerType === 'touch' || event.button !== 0 || drag) return;
+    if (event.target.closest(INTERACTIVE_SELECTOR)) return;
+    const slot = event.target.closest('.card-slot');
+    if (!slot || !root.contains(slot)) return;
+    event.preventDefault?.();
+    beginDrag(slot, event);
   });
 
   root.addEventListener('pointermove', (event) => {
-    if (drag && event.pointerId === drag.pointerId) {
-      const samples = event.getCoalescedEvents?.();
-      const sample = samples?.length ? samples[samples.length - 1] : event;
-      const dx = sample.clientX - drag.startX;
-      const dy = sample.clientY - drag.startY;
-      if (!drag.moved && Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
-        drag.moved = true;
-        drag.slot.classList.add('is-dragging');
-      }
-      if (drag.moved) {
-        event.preventDefault();
-        const now = sample.timeStamp || event.timeStamp || performance.now();
-        const dt = Math.max(8, now - drag.lastTime);
-        const instantVx = (sample.clientX - drag.lastX) / dt * 1000;
-        const instantVy = (sample.clientY - drag.lastY) / dt * 1000;
-        drag.vx = drag.vx * 0.65 + instantVx * 0.35;
-        drag.vy = drag.vy * 0.65 + instantVy * 0.35;
-        drag.x = drag.baseX + dx;
-        drag.y = drag.baseY + dy;
-        drag.lastX = sample.clientX;
-        drag.lastY = sample.clientY;
-        drag.lastTime = now;
-        setDragTransform(cardFor(drag.slot), drag.x, drag.y, drag.vx);
-      }
-      pointer = { x: sample.clientX, y: sample.clientY };
-      schedulePaint();
+    if (drag && !drag.touch && event.pointerId === drag.pointerId) {
+      moveDrag(event);
       return;
     }
     if (spring) return;
@@ -220,6 +237,56 @@ export function bindCardEffects(root) {
     pointer = { x: event.clientX, y: event.clientY };
     schedulePaint();
   }, { passive: false });
+
+  // Touch Events let the first move choose scrolling; changing touch-action after a hold is too late.
+  root.addEventListener('touchstart', (event) => {
+    if (event.touches.length !== 1) { reset(); return; }
+    if (motion.matches || drag || event.target.closest(INTERACTIVE_SELECTOR)) return;
+    const slot = event.target.closest('.card-slot');
+    if (!slot || !root.contains(slot)) return;
+    clearTimeout(touchTimer);
+    const finger = event.touches[0];
+    touchPending = { slot, identifier: finger.identifier, clientX: finger.clientX, clientY: finger.clientY };
+    touchTimer = setTimeout(() => {
+      const pending = touchPending;
+      touchPending = null;
+      if (!pending?.slot.isConnected) return;
+      beginDrag(pending.slot, { ...pending, pointerId: `touch:${pending.identifier}`, timeStamp: performance.now() }, true);
+      drag.moved = true;
+      drag.slot.classList.add('is-dragging');
+      schedulePaint();
+    }, TOUCH_HOLD_MS);
+  }, { passive: true });
+
+  root.addEventListener('touchmove', (event) => {
+    if (event.touches.length !== 1) { reset(); return; }
+    const finger = event.touches[0];
+    if (touchPending) {
+      if (Math.hypot(finger.clientX - touchPending.clientX, finger.clientY - touchPending.clientY) > TOUCH_SLOP) {
+        clearTimeout(touchTimer);
+        touchPending = null;
+      }
+      return;
+    }
+    if (!drag?.touch || drag.pointerId !== `touch:${finger.identifier}`) return;
+    // A noncancelable move means the browser has already committed to scrolling.
+    if (event.cancelable === false) { reset(); return; }
+    event.preventDefault();
+    moveDrag({ clientX: finger.clientX, clientY: finger.clientY, timeStamp: event.timeStamp });
+  }, { passive: false });
+
+  function endTouch(event, cancelled = false) {
+    clearTimeout(touchTimer);
+    touchPending = null;
+    if (!drag?.touch) return;
+    const released = [...event.changedTouches].find((finger) => drag.pointerId === `touch:${finger.identifier}`);
+    if (released) releaseDrag({ pointerId: drag.pointerId }, cancelled);
+  }
+  root.addEventListener('touchend', (event) => endTouch(event));
+  root.addEventListener('touchcancel', (event) => endTouch(event, true));
+  root.addEventListener('contextmenu', (event) => {
+    if (touchPending || drag?.touch) event.preventDefault();
+  });
 
   root.addEventListener('pointerup', (event) => releaseDrag(event));
   root.addEventListener('pointercancel', (event) => releaseDrag(event, true));

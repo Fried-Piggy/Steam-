@@ -141,9 +141,10 @@ kbd { padding: 4px 7px; border: 1px solid var(--line-strong); border-bottom-widt
 .game-card__cover, .cover-preview { position: relative; display: grid; overflow: hidden; place-items: center; background: linear-gradient(135deg, #18263a, #0e1623); }
 .game-card__cover { aspect-ratio: 460 / 215; }
 .game-card__cover img, .cover-preview img { position: absolute; inset: 0; width: 100%; height: 100%; }
-.game-card__cover .cover-backdrop, .cover-preview .cover-backdrop { z-index: 1; object-fit: cover; filter: blur(14px) saturate(.8) brightness(.5); transform: scale(1.09); }
 .game-card__cover .cover-art, .cover-preview .cover-art { z-index: 2; object-fit: contain; object-position: center; }
 .game-card__cover .cover-art { object-fit: cover; }
+.game-card__cover .cover-art { opacity: 0; transition: opacity 180ms ease-out; }
+.game-card__cover.is-loaded .cover-art { opacity: 1; }
 .cover-fallback { z-index: 0; color: var(--muted); font-size: 2.4rem; opacity: 0.48; }
 .game-card__body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 17px; }
 .game-card__title { margin: 0; overflow-wrap: anywhere; font-size: 1.03rem; line-height: 1.35; }

@@ -1,3 +1,5 @@
+import { getCoverAsset } from './cover-assets.js';
+
 const SILVER = Object.freeze({
   primary: Object.freeze([174, 185, 198]),
   secondary: Object.freeze([219, 225, 232]),
@@ -161,12 +163,33 @@ async function getPalette(appId, variant) {
   return promise;
 }
 
-export async function applyCoverPalette(card, appId, variant = 0) {
+export async function applyCoverPalette(card, appId, variant = 0, sourceImage = null) {
   if (!/^\d{1,10}$/.test(String(appId))
     || (variant !== 'auto' && (!Number.isInteger(variant) || variant < 0 || variant > 3))) return;
   const key = `${appId}:${variant}`;
   activeCards.set(card, key);
-  const palette = await getPalette(appId, variant);
+  const published = getCoverAsset(appId)?.palette;
+  loadCache();
+  const cached = palettes.get(key);
+  let palette;
+  if (validPalette(published)) {
+    palette = published;
+  } else if (cached && Date.now() - cached.at < CACHE_TTL) {
+    palette = cached.palette;
+  } else if (sourceImage?.complete && sourceImage.naturalWidth) {
+    // Admin mode samples the image already decoded for this card, with no second image request.
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 48;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      context.drawImage(sourceImage, 0, 0, 48, 48);
+      palette = extractCoverPalette(context.getImageData(0, 0, 48, 48).data);
+      saveCache(key, palette);
+    } catch { return; }
+  } else {
+    palette = await getPalette(appId, variant);
+  }
+  await Promise.resolve();
   // A late response must not tint a detached or replaced card.
   if (!palette || !card.isConnected || activeCards.get(card) !== key) return;
   for (const name of ['primary', 'secondary', 'highlight']) {

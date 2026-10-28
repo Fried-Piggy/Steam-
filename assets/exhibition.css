@@ -133,7 +133,7 @@ h1 span { color: #d2ba7d; }
 .card-slot:focus-within { z-index: 4; }
 .card-slot:focus-within .game-card { outline: 2px solid #dbc890; outline-offset: 4px; }
 .card-edition { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 5px 4px 10px; color: #d0dcc9; font: .53rem ui-monospace, Consolas, monospace; letter-spacing: .06em; }
-.game-card__cover { aspect-ratio: 460 / 215; border: 1px solid #b7c8aa40; border-radius: 6px; background: radial-gradient(ellipse, #44604a, #10241d); flex-shrink: 0; }
+.game-card__cover { aspect-ratio: 460 / 215; border: 1px solid #b7c8aa40; border-radius: 6px; background: radial-gradient(ellipse at 30% 30%, rgb(var(--cover-tint, 68 96 74) / .55), #10241d); flex-shrink: 0; }
 .game-card__body { gap: 8px; padding: 13px 7px 8px; background: linear-gradient(#0b1815e8, #101e18f7); border: 1px solid #adc19e24; border-top: 0; border-radius: 0 0 6px 6px; }
 .game-card__title { font-family: 'Songti SC', 'STSong', 'SimSun', Georgia, serif; font-weight: 600; font-size: 1.12rem; line-height: 1.3; letter-spacing: .03em; }
 .genre-tag { background: #d3caa012; color: #c7c9a1; border: 1px solid #b0bc8b22; border-radius: 4px; font-size: .62rem; padding: 3px 6px; }
@@ -300,7 +300,13 @@ h1 span { color: #d2ba7d; }
   .page-button { padding: 7px 8px; font-size: .62rem; }
   #pageStatus { font-size: .56rem; }
 }
-@media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse) {
+@media (hover: none), (pointer: coarse) {
+  .game-card { -webkit-touch-callout: none; user-select: none; }
+  .card-slot:not(.is-dragging):not(.is-returning) .game-card { --card-lift: 0px; --card-scale: 1; }
+  .card-slot.is-dragging .card-foil { opacity: .38; }
+  .card-slot.is-dragging .card-glare { opacity: .28; }
+}
+@media (prefers-reduced-motion: reduce) {
   .game-card, .game-card:hover, .card-slot.is-inspecting .game-card, .card-slot.is-dragging .game-card, .card-slot.is-returning .game-card { transform: none; transition: none; }
   .card-foil { opacity: .14; }
   .card-glare { opacity: .08; }

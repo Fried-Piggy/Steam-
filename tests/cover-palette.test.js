@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { extractCoverPalette } from '../src/cover-palette.js';
+import { setCoverAssets } from '../src/cover-assets.js';
 
 function pixels(...groups) {
   return Uint8ClampedArray.from(groups.flatMap(([rgb, count, alpha = 255]) =>
@@ -60,4 +61,46 @@ test('cached palettes apply without fetching and never recolor detached cards', 
   card.isConnected = false;
   await applyCoverPalette(card, '10');
   assert.equal(values.size, 0);
+});
+
+test('published foil applies without Image or canvas; new admin covers sample their already loaded image automatically', async (t) => {
+  const palette = { primary: [230, 80, 20], secondary: [240, 210, 40], highlight: [250, 220, 190] };
+  const originals = new Map();
+  let draws = 0;
+  let sampledImage;
+  const source = { complete: true, naturalWidth: 460 };
+  for (const [key, value] of Object.entries({
+    Image: class { constructor() { throw new Error('No additional image request allowed'); } },
+    localStorage: { getItem: () => null, setItem() {} },
+    document: { createElement(tag) {
+      assert.equal(tag, 'canvas');
+      return { getContext: () => ({
+        drawImage(image) { draws += 1; sampledImage = image; },
+        getImageData: () => ({ data: pixels([[220, 30, 20], 50], [[240, 200, 20], 50]) }),
+      }) };
+    } },
+  })) {
+    originals.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
+    Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
+  }
+  t.after(() => {
+    setCoverAssets({});
+    for (const [key, descriptor] of originals) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+  });
+  setCoverAssets({ 99: { small: '99-abcdef-320.webp', large: '99-abcdef-460.webp', palette } });
+  const { applyCoverPalette } = await import('../src/cover-palette.js?published');
+  const values = new Map();
+  const card = { isConnected: true, dataset: {}, style: { setProperty: (key, value) => values.set(key, value) } };
+  await applyCoverPalette(card, '99', 'auto', source);
+  assert.equal(values.get('--foil-primary'), 'rgb(230, 80, 20)');
+  assert.equal(draws, 0, 'public cards never sample pixels');
+  setCoverAssets({});
+  await applyCoverPalette(card, '100', 'auto', source);
+  assert.equal(draws, 1);
+  assert.equal(sampledImage, source, 'new admin cards reuse the decoded cover');
+  await applyCoverPalette(card, '100', 'auto', source);
+  assert.equal(draws, 1, 'subsequent renders reuse the generated palette');
 });

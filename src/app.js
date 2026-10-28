@@ -26,9 +26,10 @@ import {
   getOwnedSteamGames,
   getSteamAppDetails,
   searchSteam,
-} from './steam.js';
-import { bindCardEffects } from './card-effects.js';
-import { applyCoverPalette } from './cover-palette.js';
+} from './steam.js?v=4.1.0';
+import { bindCardEffects } from './card-effects.js?v=4.1.0';
+import { applyCoverPalette } from './cover-palette.js?v=4.1.0';
+import { getCoverAsset, loadCoverAssets } from './cover-assets.js';
 import { createLocalBackup } from './local-backup.js';
 import { bindOrderEditor } from './order-editor.js';
 
@@ -174,7 +175,7 @@ function closeDialog(dialog) {
   if (dialog.open) dialog.close();
 }
 
-function createCover(appId, alt, className = '') {
+function createCover(appId, alt, className = '', { rank = 0 } = {}) {
   const wrapper = createElement('div', className);
   const fallback = createElement('span', 'cover-fallback', '🎮');
   fallback.setAttribute('aria-hidden', 'true');
@@ -183,32 +184,35 @@ function createCover(appId, alt, className = '') {
   const candidates = getCoverCandidates(appId);
   if (candidates.length === 0) return wrapper;
 
-  const backdrop = document.createElement('img');
-  backdrop.className = 'cover-backdrop';
-  backdrop.draggable = false;
-  backdrop.src = candidates[0];
-  backdrop.alt = '';
-  backdrop.setAttribute('aria-hidden', 'true');
-
   const artwork = document.createElement('img');
   artwork.className = 'cover-art';
   artwork.draggable = false;
-  artwork.src = candidates[0];
   artwork.alt = alt;
-  artwork.loading = 'lazy';
+  artwork.loading = rank ? 'eager' : 'lazy';
+  artwork.decoding = 'async';
+  artwork.fetchPriority = rank === 1 ? 'high' : rank ? 'auto' : 'low';
+  artwork.width = 460;
+  artwork.height = 215;
+  const asset = getCoverAsset(appId);
+  if (asset?.palette) wrapper.style.setProperty('--cover-tint', asset.palette.primary.join(' '));
+  if (asset) {
+    artwork.sizes = '(max-width: 520px) 46vw, (max-width: 760px) 42vw, 340px';
+    artwork.srcset = `./assets/covers/${asset.small} 320w, ./assets/covers/${asset.large} 460w`;
+  }
   artwork.dataset.coverIndex = '0';
+  artwork.addEventListener('load', () => wrapper.classList.add('is-loaded'));
   artwork.addEventListener('error', () => {
+    artwork.removeAttribute('srcset');
     const nextIndex = Number(artwork.dataset.coverIndex) + 1;
     if (nextIndex < candidates.length) {
       artwork.dataset.coverIndex = String(nextIndex);
       artwork.src = candidates[nextIndex];
-      backdrop.src = candidates[nextIndex];
     } else {
       artwork.remove();
-      backdrop.remove();
     }
   });
-  wrapper.append(backdrop, artwork);
+  artwork.src = candidates[0];
+  wrapper.append(artwork);
   return wrapper;
 }
 
@@ -245,15 +249,16 @@ function createGameCard(game, { rank = 0, serial = 1 } = {}) {
     createElement('span', '', rank ? `NO. 0${rank}` : `#${String(serial).padStart(3, '0')}`),
   );
 
-  const cover = createCover(game.appId, `${game.name} 封面`, 'game-card__cover');
+  const cover = createCover(game.appId, `${game.name} 封面`, 'game-card__cover', { rank });
   const artwork = cover.querySelector('.cover-art');
   if (artwork && !rank) {
     const updateFoil = () => {
       const index = Number(artwork.dataset.coverIndex);
-      applyCoverPalette(card, game.appId, index === 0 ? 'auto' : index - 1);
+      applyCoverPalette(card, game.appId, index === 0 ? 'auto' : index - 1, artwork);
     };
     artwork.addEventListener('load', updateFoil);
     if (artwork.complete && artwork.naturalWidth) updateFoil();
+    if (getCoverAsset(game.appId)) queueMicrotask(updateFoil);
   }
   const badge = createElement('div', 'rarity-badge');
   badge.dataset.tier = tier || 'unset';
@@ -948,7 +953,10 @@ async function initialize() {
 
   let defaults = [];
   try {
-    defaults = await loadDefaultLibrary();
+    [defaults] = await Promise.all([
+      loadDefaultLibrary(),
+      isAdminMode ? Promise.resolve() : loadCoverAssets().catch(() => {}),
+    ]);
   } catch (error) {
     showToast(`默认游戏库加载失败：${error.message}`, 'error');
   }

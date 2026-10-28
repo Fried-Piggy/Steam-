@@ -182,4 +182,54 @@ test('card drag follows the pointer, suppresses its click, and springs back to r
   assert.equal(classes.size, 0);
   assert.equal(styles.has('--drag-x'), false);
   assert.equal(styles.has('--drag-y'), false);
+
+  hover.matches = false;
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const finger = (x = 130, y = 140) => ({ identifier: 7, clientX: x, clientY: y });
+  const touchStart = (target = card) => root.emit('touchstart', { target, touches: [finger()] });
+  let blockedScroll = false;
+  const touchMove = (x, y, cancelable = true) => root.emit('touchmove', {
+    target: card, touches: [finger(x, y)], cancelable, timeStamp: now += 16,
+    preventDefault() { blockedScroll = true; },
+  });
+
+  touchStart();
+  touchMove(131, 165);
+  t.mock.timers.tick(200);
+  assert.equal(blockedScroll, false, 'immediate swipes never block page scrolling');
+  assert.equal(classes.has('is-dragging'), false, 'a swipe cancels the long press');
+
+  touchStart(button);
+  t.mock.timers.tick(200);
+  assert.equal(classes.has('is-dragging'), false, 'touching controls never starts a drag');
+
+  touchStart();
+  t.mock.timers.tick(159);
+  assert.equal(classes.has('is-dragging'), false);
+  t.mock.timers.tick(1);
+  assert.equal(classes.has('is-dragging'), true, 'a stationary hold lifts the card on coarse devices');
+  touchMove(180, 210);
+  assert.equal(blockedScroll, true, 'only an active long-press drag owns scrolling');
+  assert.equal(styles.get('--drag-x'), '50.00px');
+  assert.equal(styles.get('--drag-y'), '70.00px');
+  root.emit('touchend', { changedTouches: [finger(180, 210)] });
+  assert.equal(classes.has('is-returning'), true, 'touch release uses the desktop spring');
+  for (let index = 0; index < 240 && frames.size; index += 1) flushOne(now += 16);
+  assert.equal(classes.size, 0);
+
+  touchStart();
+  t.mock.timers.tick(160);
+  root.emit('touchstart', { target: card, touches: [finger(), { identifier: 8 }] });
+  assert.equal(classes.size, 0, 'a second finger cancels without trapping zoom/scroll');
+  assert.equal(styles.has('--drag-x'), false);
+
+  touchStart();
+  t.mock.timers.tick(160);
+  touchMove(180, 210, false);
+  assert.equal(classes.size, 0, 'a browser-owned scroll cancels the drag');
+
+  touchStart();
+  root.emit('touchcancel', { changedTouches: [finger()] });
+  t.mock.timers.tick(200);
+  assert.equal(classes.size, 0, 'cancellation before the hold leaves no delayed drag');
 });

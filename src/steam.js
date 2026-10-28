@@ -1,3 +1,5 @@
+import { getCoverAsset } from './cover-assets.js';
+
 const COVER_HOSTS = Object.freeze([
   'https://cdn.cloudflare.steamstatic.com/steam/apps',
   'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps',
@@ -17,7 +19,9 @@ export function getCoverCandidates(appId) {
   const id = String(appId).trim();
   const hostname = typeof window === 'undefined' ? '127.0.0.1' : window.location.hostname;
   const isLocal = ['127.0.0.1', 'localhost', '[::1]'].includes(hostname);
-  return [isLocal ? `/api/steam/covers/${id}?variant=auto` : `./assets/covers/${id}-auto.jpg`, ...legacy];
+  const asset = getCoverAsset(id);
+  return [isLocal ? `/api/steam/covers/${id}?variant=auto`
+    : asset ? `./assets/covers/${asset.large}` : `./assets/covers/${id}-auto.jpg`, ...legacy];
 }
 
 async function requestJson(url, options = {}) {
