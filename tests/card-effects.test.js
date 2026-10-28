@@ -111,8 +111,13 @@ test('card drag follows the pointer, suppresses its click, and springs back to r
   const styles = new Map();
   const classes = new Set();
   let captured = null;
+  let boundsReads = 0;
+  let transformWrites = 0;
   const card = {
-    style: { setProperty: (key, value) => styles.set(key, value), removeProperty: (key) => styles.delete(key) },
+    style: { setProperty: (key, value) => {
+      styles.set(key, value);
+      if (key === 'transform') transformWrites += 1;
+    }, removeProperty: (key) => styles.delete(key) },
     closest: (selector) => selector === '.card-slot' ? slot : null,
     setPointerCapture: (id) => { captured = id; },
     releasePointerCapture: (id) => { if (captured === id) captured = null; },
@@ -122,7 +127,7 @@ test('card drag follows the pointer, suppresses its click, and springs back to r
     isConnected: true,
     contains: (node) => node === card || node === button,
     querySelector: () => card,
-    getBoundingClientRect: () => ({ left: 100, top: 100, width: 240, height: 400 }),
+    getBoundingClientRect: () => { boundsReads += 1; return { left: 100, top: 100, width: 240, height: 400 }; },
     classList: {
       add: (...values) => values.forEach((value) => classes.add(value)),
       remove: (...values) => values.forEach((value) => classes.delete(value)),
@@ -184,6 +189,7 @@ test('card drag follows the pointer, suppresses its click, and springs back to r
   assert.equal(styles.has('--drag-y'), false);
 
   hover.matches = false;
+  const boundsBeforeTouch = boundsReads;
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const finger = (x = 130, y = 140) => ({ identifier: 7, clientX: x, clientY: y });
   const touchStart = (target = card) => root.emit('touchstart', { target, touches: [finger()] });
@@ -208,10 +214,16 @@ test('card drag follows the pointer, suppresses its click, and springs back to r
   assert.equal(classes.has('is-dragging'), false);
   t.mock.timers.tick(1);
   assert.equal(classes.has('is-dragging'), true, 'a stationary hold lifts the card on coarse devices');
+  touchMove(160, 180);
   touchMove(180, 210);
   assert.equal(blockedScroll, true, 'only an active long-press drag owns scrolling');
-  assert.equal(styles.get('--drag-x'), '50.00px');
-  assert.equal(styles.get('--drag-y'), '70.00px');
+  assert.equal(transformWrites, 0, 'touch events wait for one compositor update per frame');
+  flushOne();
+  assert.equal(transformWrites, 1, 'touch bursts paint only the latest position');
+  assert.ok(styles.get('transform').startsWith('translate3d(50.00px, 58.00px, 0)'));
+  assert.equal(styles.has('--foil-angle'), false, 'mobile dragging never repaints gradient angles');
+  assert.equal(styles.has('--drag-x'), false, 'mobile dragging avoids inherited variable invalidation');
+  assert.equal(boundsReads, boundsBeforeTouch, 'mobile dragging needs no layout reads');
   root.emit('touchend', { changedTouches: [finger(180, 210)] });
   assert.equal(classes.has('is-returning'), true, 'touch release uses the desktop spring');
   for (let index = 0; index < 240 && frames.size; index += 1) flushOne(now += 16);

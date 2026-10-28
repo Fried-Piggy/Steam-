@@ -27,7 +27,7 @@ import {
   getSteamAppDetails,
   searchSteam,
 } from './steam.js?v=4.1.0';
-import { bindCardEffects } from './card-effects.js?v=4.1.0';
+import { bindCardEffects } from './card-effects.js?v=4.1.1';
 import { applyCoverPalette } from './cover-palette.js?v=4.1.0';
 import { getCoverAsset, loadCoverAssets } from './cover-assets.js';
 import { createLocalBackup } from './local-backup.js';
@@ -83,6 +83,15 @@ const LOCAL_ADMIN_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
 const isAdminMode = LOCAL_ADMIN_HOSTS.has(window.location.hostname)
   && new URLSearchParams(window.location.search).get('admin') === '1';
 elements.adminToolbar.hidden = !isAdminMode;
+
+// Measure only when a comment's available size changes, never during card transforms.
+const reviewLayoutObserver = !isAdminMode && typeof ResizeObserver === 'function'
+  ? new ResizeObserver((entries) => {
+    for (const { target, contentRect } of entries) {
+      const lineHeight = parseFloat(getComputedStyle(target).lineHeight);
+      if (lineHeight > 0) target.style.setProperty('--review-lines', String(Math.max(1, Math.floor(contentRect.height / lineHeight))));
+    }
+  }) : null;
 
 const state = {
   games: [],
@@ -235,7 +244,7 @@ function renderGenreOptions() {
 
 function createGameCard(game, { rank = 0, serial = 1 } = {}) {
   const slot = createElement('div', rank ? `card-slot card-slot--honor rank-${rank}` : 'card-slot');
-  const card = createElement('article', 'game-card');
+  const card = createElement('article', isAdminMode ? 'game-card' : 'game-card game-card--public');
   card.dataset.gameId = game.id;
   const theme = getCardTheme(game.genres, game.cardTheme);
   if (!rank && theme) card.dataset.theme = CARD_THEMES[theme];
@@ -376,6 +385,8 @@ function render() {
   elements.resultCount.textContent = filtered.length === state.games.length
     ? `${state.games.length} 款游戏`
     : `显示 ${filtered.length} / ${state.games.length} 款`;
+  reviewLayoutObserver?.disconnect();
+  document.querySelectorAll('.game-card--public .game-card__review').forEach((review) => reviewLayoutObserver?.observe(review));
 }
 
 function initializeTierPicker() {

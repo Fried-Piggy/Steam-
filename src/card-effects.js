@@ -1,6 +1,7 @@
 const EFFECT_PROPERTIES = Object.freeze([
   '--rotate-x', '--rotate-y', '--light-x', '--light-y', '--foil-x', '--foil-y', '--foil-angle',
   '--drag-x', '--drag-y', '--drag-rotate',
+  'transform',
 ]);
 
 const DRAG_THRESHOLD = 5;
@@ -35,7 +36,8 @@ export function bindCardEffects(root) {
   function clearCard(slot = active) {
     const card = cardFor(slot);
     if (!slot || !card) return;
-    slot.classList.remove('is-inspecting', 'is-dragging', 'is-returning');
+    slot.classList.remove('is-inspecting', 'is-dragging', 'is-returning', 'is-touch-motion');
+    root.classList?.remove('is-card-touch-active');
     for (const property of EFFECT_PROPERTIES) card.style.removeProperty(property);
   }
 
@@ -67,16 +69,27 @@ export function bindCardEffects(root) {
     active.classList.add('is-inspecting');
   }
 
-  function setDragTransform(card, x, y, velocityX = 0) {
+  function setDragTransform(card, x, y, velocityX = 0, touch = false, lift = 1) {
+    const rotation = Math.max(-7, Math.min(7, x * 0.025 + velocityX * 0.018));
+    if (touch) {
+      const tiltX = Math.max(-5, Math.min(5, -y * .025));
+      const tiltY = Math.max(-8, Math.min(8, x * .04));
+      // Direct transform avoids invalidating inherited custom properties across the card subtree.
+      card.style.setProperty('transform', `translate3d(${x.toFixed(2)}px, ${(y - 12 * lift).toFixed(2)}px, 0) rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) rotateZ(${rotation.toFixed(2)}deg) scale(${(1 + .04 * lift).toFixed(4)})`);
+      return;
+    }
     card.style.setProperty('--drag-x', `${x.toFixed(2)}px`);
     card.style.setProperty('--drag-y', `${y.toFixed(2)}px`);
-    const rotation = Math.max(-7, Math.min(7, x * 0.025 + velocityX * 0.018));
     card.style.setProperty('--drag-rotate', `${rotation.toFixed(2)}deg`);
   }
 
   function paint() {
     paintFrame = 0;
     if (!active?.isConnected || !pointer) { reset(); return; }
+    if (drag?.touch) {
+      setDragTransform(cardFor(), drag.x, drag.y, drag.vx, true);
+      return;
+    }
     const rect = active.getBoundingClientRect();
     const x = Math.min(1, Math.max(0, (pointer.x - rect.left) / rect.width));
     const y = Math.min(1, Math.max(0, (pointer.y - rect.top) / rect.height));
@@ -105,20 +118,24 @@ export function bindCardEffects(root) {
     pointer = null;
     slot.classList.remove('is-dragging');
     slot.classList.add('is-returning');
-    spring = { slot, card, x: release.x, y: release.y, vx: release.vx, vy: release.vy, lastTime: 0, startTime: 0 };
+    spring = { slot, card, touch: release.touch, x: release.x, y: release.y, vx: release.vx, vy: release.vy,
+      originX: release.x, originY: release.y, originVx: release.vx, originVy: release.vy, startTime: performance.now() };
 
     function tick(time) {
       if (!spring || !spring.slot.isConnected) { reset(); return; }
-      const dt = spring.lastTime ? Math.min(0.032, (time - spring.lastTime) / 1000) : 1 / 60;
-      if (!spring.startTime) spring.startTime = time;
-      spring.lastTime = time;
-      const stiffness = 210;
-      const damping = 19;
-      spring.vx += (-stiffness * spring.x - damping * spring.vx) * dt;
-      spring.vy += (-stiffness * spring.y - damping * spring.vy) * dt;
-      spring.x += spring.vx * dt;
-      spring.y += spring.vy * dt;
-      setDragTransform(spring.card, spring.x, spring.y, spring.vx);
+      // Analytic damped spring follows elapsed time even if a mobile frame is skipped.
+      const elapsed = (time - spring.startTime) / 1000;
+      const decay = Math.exp(-9.5 * elapsed);
+      const frequency = Math.sqrt(210 - 9.5 ** 2);
+      const cosine = Math.cos(frequency * elapsed);
+      const sine = Math.sin(frequency * elapsed);
+      const position = (x, v) => decay * (x * cosine + (v + 9.5 * x) / frequency * sine);
+      const velocity = (x, v) => decay * (v * cosine - (9.5 * v + 210 * x) / frequency * sine);
+      spring.x = position(spring.originX, spring.originVx);
+      spring.y = position(spring.originY, spring.originVy);
+      spring.vx = velocity(spring.originX, spring.originVx);
+      spring.vy = velocity(spring.originY, spring.originVy);
+      setDragTransform(spring.card, spring.x, spring.y, spring.vx, spring.touch, decay);
       const settled = Math.hypot(spring.x, spring.y) < 0.35 && Math.hypot(spring.vx, spring.vy) < 5;
       const timedOut = time - spring.startTime > 1500;
       if (settled || timedOut) {
@@ -135,6 +152,10 @@ export function bindCardEffects(root) {
 
   function releaseDrag(event, cancelled = false) {
     if (!drag || event.pointerId !== drag.pointerId) return;
+    if (drag.touch && !cancelled && paintFrame) {
+      cancelAnimationFrame(paintFrame);
+      paint();
+    }
     const released = drag;
     drag = null;
     if (!released.touch) releaseCapture(cardFor(released.slot), released.pointerId);
@@ -167,7 +188,16 @@ export function bindCardEffects(root) {
       }
     }
     activate(slot);
+    if (touch) {
+      slot.classList.add('is-touch-motion');
+      root.classList?.add('is-card-touch-active');
+    }
     const card = cardFor(slot);
+    if (!touch) {
+      card.style.removeProperty('transform');
+      slot.classList.remove('is-touch-motion');
+      root.classList?.remove('is-card-touch-active');
+    }
     drag = {
       slot,
       touch,
@@ -209,7 +239,7 @@ export function bindCardEffects(root) {
       drag.lastX = sample.clientX;
       drag.lastY = sample.clientY;
       drag.lastTime = now;
-      setDragTransform(cardFor(drag.slot), drag.x, drag.y, drag.vx);
+      if (!drag.touch) setDragTransform(cardFor(drag.slot), drag.x, drag.y, drag.vx);
     }
     pointer = { x: sample.clientX, y: sample.clientY };
     schedulePaint();

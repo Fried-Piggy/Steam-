@@ -134,6 +134,7 @@
 @keyframes rarity-sparkle { 0%, 100% { opacity: .45; transform: scale(.7) rotate(-12deg); } 50% { opacity: 1; transform: scale(1) rotate(12deg); } }
 .card-slot:is(.is-dragging, .is-returning) .rarity-badge *,
 .card-slot:is(.is-dragging, .is-returning) .rarity-badge::after { animation-play-state: paused; }
+.is-card-touch-active .rarity-badge *, .is-card-touch-active .rarity-badge::after { animation-play-state: paused; }
 @media (max-width: 560px) {
   .tier-picker { grid-template-columns: 1fr; }
   .tier-choice__panel { min-height: 72px; }
