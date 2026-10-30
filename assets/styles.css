@@ -24,6 +24,18 @@
 }
 
 * { box-sizing: border-box; }
+/* Prevent long-press selection and callouts throughout the gallery, including dialogs. */
+html, body, body * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+body input, body textarea, body [contenteditable="true"], body [contenteditable="true"] * {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+img { -webkit-user-drag: none; }
 html { min-width: 320px; scroll-behavior: smooth; }
 body {
   min-height: 100vh;

@@ -113,6 +113,14 @@ const state = {
 };
 
 const PAGE_SIZE = 12;
+// Keep editable fields usable while suppressing browser selection/copy menus elsewhere.
+for (const eventName of ['selectstart', 'copy', 'cut', 'contextmenu']) {
+  document.addEventListener(eventName, (event) => {
+    const target = event.target instanceof Element ? event.target : event.target?.parentElement;
+    if (target?.closest('input, textarea') || target?.isContentEditable) return;
+    event.preventDefault();
+  });
+}
 const cardEffects = bindCardEffects(document.querySelector('#library'));
 const backupStatus = document.querySelector('#localBackupStatus');
 backupStatus.hidden = !isAdminMode;
