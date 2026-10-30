@@ -312,7 +312,11 @@ h1 span { color: #d2ba7d; }
   #pageStatus { font-size: .56rem; }
 }
 @media (hover: none), (pointer: coarse) {
-  .game-card { -webkit-touch-callout: none; user-select: none; }
+  .game-card, .game-card * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
   .card-slot:not(.is-dragging):not(.is-returning) .game-card { --card-lift: 0px; --card-scale: 1; }
   .card-slot.is-dragging .card-foil { opacity: .38; }
   .card-slot.is-dragging .card-glare { opacity: .28; }

@@ -11,6 +11,13 @@
 [data-tier="SR"] { --rarity-rgb: 197 145 255; --rarity-ink: #361258; --rarity-metal: linear-gradient(125deg, #ffe8ff, #ce8eff 24%, #fcf3ff 41%, #9660df 47%, #fff 51%, #91bdff 67%, #f8bbff 85%, #ffe8ff); }
 [data-tier="SSR"] { --rarity-rgb: 255 207 93; --rarity-ink: #63350e; --rarity-metal: linear-gradient(120deg, #fff5b5, #ffcc45 17%, #fffef1 32%, #ce8422 40%, #fff7ac 46%, #fff 50%, #ffc04b 60%, #ffe9a6 78%, #fff5b5); }
 [data-tier="UR"] { --rarity-rgb: 255 223 143; --rarity-ink: #613369; --rarity-metal: linear-gradient(115deg, #fff6af 0%, #ffb0d9 14%, #d0a8ff 26%, #91eeff 37%, #fff 43%, #ffdf72 49%, #fff9d0 55%, #a7ffe1 65%, #b5c3ff 77%, #ffb8ed 89%, #fff6af 100%); }
+[data-tier="F"] { --rarity-glyph: url('./rarity-glyphs/f.svg'); }
+[data-tier="C"] { --rarity-glyph: url('./rarity-glyphs/c.svg'); }
+[data-tier="N"] { --rarity-glyph: url('./rarity-glyphs/n.svg'); }
+[data-tier="R"] { --rarity-glyph: url('./rarity-glyphs/r.svg'); }
+[data-tier="SR"] { --rarity-glyph: url('./rarity-glyphs/sr.svg'); }
+[data-tier="SSR"] { --rarity-glyph: url('./rarity-glyphs/ssr.svg'); }
+[data-tier="UR"] { --rarity-glyph: url('./rarity-glyphs/ur.svg'); }
 
 /* Sticker overlay: the original card layout reserves no space for this badge. */
 .rarity-badge {
@@ -44,11 +51,24 @@
   text-align: center;
   padding-right: 5px;
 }
+.rarity-badge:not([data-tier="unset"]) :is(.rarity-badge__letters, .rarity-badge__shadow) {
+  right: 5px;
+  height: 39px;
+  padding: 0;
+  overflow: hidden;
+  color: transparent;
+  font-size: 0;
+  -webkit-mask: var(--rarity-glyph) center / contain no-repeat;
+  mask: var(--rarity-glyph) center / contain no-repeat;
+}
 .rarity-badge__shadow {
   transform: translate(0, .5px);
   color: var(--rarity-ink);
   -webkit-text-stroke: .35px var(--rarity-ink);
   text-shadow: 0 .5px 0 var(--rarity-ink);
+}
+.rarity-badge:not([data-tier="unset"]) .rarity-badge__shadow {
+  background: var(--rarity-ink);
 }
 .rarity-badge__letters {
   color: rgb(var(--rarity-rgb));
@@ -59,6 +79,10 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 -1px 0 #ffffff40) drop-shadow(0 2px 2px #0008);
+}
+.rarity-badge:not([data-tier="unset"]) .rarity-badge__letters {
+  background-clip: border-box;
+  -webkit-background-clip: border-box;
 }
 .rarity-badge__stars {
   position: absolute;
@@ -73,7 +97,7 @@
 }
 .rarity-badge[data-tier="SR"] .rarity-badge__letters { animation: rarity-metal-flow 9s linear infinite; }
 .rarity-badge[data-tier="SSR"] .rarity-badge__letters { animation: rarity-metal-flow 6s linear infinite; }
-.rarity-badge[data-tier="UR"] :is(.rarity-badge__letters, .rarity-badge__shadow) { font-size: 44px; top: 9px; }
+.rarity-badge[data-tier="UR"] :is(.rarity-badge__letters, .rarity-badge__shadow) { height: 44px; top: 9px; }
 .rarity-badge[data-tier="UR"] .rarity-badge__letters { animation: rarity-metal-flow 4s linear infinite; filter: drop-shadow(0 2px 2px #0008) drop-shadow(0 0 2px #fff3bc60); }
 .rarity-badge:is([data-tier="SSR"], [data-tier="UR"])::after {
   content: '✦';
@@ -141,8 +165,9 @@
   .rarity-badge { top: 4px; right: 4px; width: 58px; height: 40px; }
   .rarity-badge:is([data-tier="R"], [data-tier="N"], [data-tier="C"], [data-tier="F"]) { width: 34px; }
   .rarity-badge__letters, .rarity-badge__shadow { top: 9px; padding-right: 3px; font-size: 27px; }
+  .rarity-badge:not([data-tier="unset"]) :is(.rarity-badge__letters, .rarity-badge__shadow) { right: 3px; height: 27px; padding: 0; font-size: 0; }
   .rarity-badge__stars { top: 0; font-size: 7px; letter-spacing: 3px; }
-  .rarity-badge[data-tier="UR"] :is(.rarity-badge__letters, .rarity-badge__shadow) { top: 7px; font-size: 31px; }
+  .rarity-badge[data-tier="UR"] :is(.rarity-badge__letters, .rarity-badge__shadow) { top: 7px; height: 31px; font-size: 0; }
   .rarity-badge:is([data-tier="SSR"], [data-tier="UR"])::after { top: -5px; right: -3px; font-size: 14px; }
   .rarity-badge[data-tier="UR"]::after { font-size: 16px; }
   .rarity-badge[data-tier="unset"] .rarity-badge__letters { top: 16px; font-size: 10px; }

@@ -315,7 +315,10 @@ export function bindCardEffects(root) {
   root.addEventListener('touchend', (event) => endTouch(event));
   root.addEventListener('touchcancel', (event) => endTouch(event, true));
   root.addEventListener('contextmenu', (event) => {
-    if (touchPending || drag?.touch) event.preventDefault();
+    if ((touchPending || drag?.touch || !hover.matches) && event.target.closest('.game-card')) event.preventDefault();
+  });
+  root.addEventListener('selectstart', (event) => {
+    if (!hover.matches && event.target.closest('.game-card')) event.preventDefault();
   });
 
   root.addEventListener('pointerup', (event) => releaseDrag(event));

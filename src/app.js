@@ -27,7 +27,7 @@ import {
   getSteamAppDetails,
   searchSteam,
 } from './steam.js?v=4.1.0';
-import { bindCardEffects } from './card-effects.js?v=4.1.2';
+import { bindCardEffects } from './card-effects.js?v=4.1.3';
 import { applyCoverPalette } from './cover-palette.js?v=4.1.0';
 import { getCoverAsset, loadCoverAssets } from './cover-assets.js';
 import { createLocalBackup } from './local-backup.js';

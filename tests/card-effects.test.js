@@ -118,7 +118,7 @@ test('card drag follows the pointer, suppresses its click, and springs back to r
       styles.set(key, value);
       if (key === 'transform') transformWrites += 1;
     }, removeProperty: (key) => styles.delete(key) },
-    closest: (selector) => selector === '.card-slot' ? slot : null,
+    closest: (selector) => selector === '.card-slot' ? slot : selector === '.game-card' ? card : null,
     setPointerCapture: (id) => { captured = id; },
     releasePointerCapture: (id) => { if (captured === id) captured = null; },
   };
@@ -244,4 +244,11 @@ test('card drag follows the pointer, suppresses its click, and springs back to r
   root.emit('touchcancel', { changedTouches: [finger()] });
   t.mock.timers.tick(200);
   assert.equal(classes.size, 0, 'cancellation before the hold leaves no delayed drag');
+
+  let preventedSelection = false;
+  let preventedMenu = false;
+  root.emit('selectstart', { target: card, preventDefault: () => { preventedSelection = true; } });
+  root.emit('contextmenu', { target: card, preventDefault: () => { preventedMenu = true; } });
+  assert.equal(preventedSelection, true, 'coarse pointers cannot select card text');
+  assert.equal(preventedMenu, true, 'coarse pointers cannot open the card long-press menu');
 });
