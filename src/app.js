@@ -250,7 +250,7 @@ function renderGenreOptions() {
   elements.genre.value = counts.has(selected) ? selected : '';
 }
 
-function createGameCard(game, { rank = 0, serial = 1 } = {}) {
+function createGameCard(game, { rank = 0 } = {}) {
   const slot = createElement('div', rank ? `card-slot card-slot--honor rank-${rank}` : 'card-slot');
   const card = createElement('article', isAdminMode ? 'game-card' : 'game-card game-card--public');
   card.dataset.gameId = game.id;
@@ -263,7 +263,6 @@ function createGameCard(game, { rank = 0, serial = 1 } = {}) {
   const edition = createElement('div', 'card-edition');
   edition.append(
     createElement('span', '', rank ? ['','GOLD / 金藏','SILVER / 银藏','BRONZE / 铜藏'][rank] : 'HOLOGRAPHIC / 闪卡'),
-    createElement('span', '', rank ? `NO. 0${rank}` : `#${String(serial).padStart(3, '0')}`),
   );
 
   const cover = createCover(game.appId, `${game.name} 封面`, 'game-card__cover', { rank });
@@ -373,8 +372,8 @@ function renderGrid(filtered, honorMatchCount = 0) {
 
   const fragment = document.createDocumentFragment();
   const start = state.page * PAGE_SIZE;
-  for (const [index, game] of filtered.slice(start, start + PAGE_SIZE).entries()) {
-    fragment.append(createGameCard(game, { serial: start + index + 1 }));
+  for (const game of filtered.slice(start, start + PAGE_SIZE)) {
+    fragment.append(createGameCard(game));
   }
   // Empty pockets preserve the silhouette of a physical album on the final page.
   for (let index = Math.min(PAGE_SIZE, filtered.length - start); index < PAGE_SIZE; index++) {
