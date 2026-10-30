@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="一个本地优先、可导入 Steam 游戏的个人游戏陈列库。">
   <title>Steam 游戏陈列库</title>
-  <link rel="stylesheet" href="./assets/styles.css?v=4.1.1">
-  <link rel="stylesheet" href="./assets/exhibition.css?v=4.1.1">
-  <link rel="stylesheet" href="./assets/rarity.css?v=4.1.1">
+  <link rel="stylesheet" href="./assets/styles.css?v=4.1.2">
+  <link rel="stylesheet" href="./assets/exhibition.css?v=4.1.2">
+  <link rel="stylesheet" href="./assets/rarity.css?v=4.1.2">
 </head>
 <body>
   <header class="app-header" id="adminToolbar" aria-label="管理员工具栏" hidden>
@@ -225,6 +225,14 @@
     </form>
   </dialog>
 
+  <dialog class="dialog review-reader" id="reviewDialog" aria-labelledby="reviewDialogTitle">
+    <header class="dialog__header">
+      <h2 id="reviewDialogTitle"></h2>
+      <button class="icon-button" type="button" data-close-dialog="reviewDialog" aria-label="关闭评论">×</button>
+    </header>
+    <div class="dialog__body"><p class="review-reader__text" id="reviewDialogText"></p></div>
+  </dialog>
+
   <dialog class="dialog dialog--wide" id="orderDialog" aria-labelledby="orderDialogTitle">
     <header class="dialog__header">
       <div><p class="eyebrow">MY COLLECTION ORDER</p><h2 id="orderDialogTitle">管理排序</h2></div>
@@ -242,6 +250,6 @@
     </footer>
   </dialog>
 
-  <script type="module" src="./src/app.js?v=4.1.1"></script>
+  <script type="module" src="./src/app.js?v=4.1.2"></script>
 </body>
 </html>

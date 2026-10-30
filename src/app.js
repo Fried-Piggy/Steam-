@@ -27,7 +27,7 @@ import {
   getSteamAppDetails,
   searchSteam,
 } from './steam.js?v=4.1.0';
-import { bindCardEffects } from './card-effects.js?v=4.1.1';
+import { bindCardEffects } from './card-effects.js?v=4.1.2';
 import { applyCoverPalette } from './cover-palette.js?v=4.1.0';
 import { getCoverAsset, loadCoverAssets } from './cover-assets.js';
 import { createLocalBackup } from './local-backup.js';
@@ -76,6 +76,9 @@ const elements = {
   resolveForm: document.querySelector('#resolveForm'),
   resolveBody: document.querySelector('#resolveTableBody'),
   retryResolve: document.querySelector('#retryResolve'),
+  reviewDialog: document.querySelector('#reviewDialog'),
+  reviewDialogTitle: document.querySelector('#reviewDialogTitle'),
+  reviewDialogText: document.querySelector('#reviewDialogText'),
   toastRegion: document.querySelector('#toastRegion'),
 };
 
@@ -89,7 +92,12 @@ const reviewLayoutObserver = !isAdminMode && typeof ResizeObserver === 'function
   ? new ResizeObserver((entries) => {
     for (const { target, contentRect } of entries) {
       const lineHeight = parseFloat(getComputedStyle(target).lineHeight);
-      if (lineHeight > 0) target.style.setProperty('--review-lines', String(Math.max(1, Math.floor(contentRect.height / lineHeight))));
+      if (lineHeight <= 0) continue;
+      const preview = target.parentElement;
+      preview.style.setProperty('--review-lines', String(Math.max(1, Math.floor(contentRect.height / lineHeight))));
+      preview.style.setProperty('--review-line-height', `${lineHeight}px`);
+      const more = preview.querySelector('.review-more');
+      if (more) more.hidden = target.scrollHeight <= contentRect.height + 1;
     }
   }) : null;
 
@@ -285,10 +293,22 @@ function createGameCard(game, { rank = 0, serial = 1 } = {}) {
   const genres = createElement('div', 'genre-tags');
   for (const genre of game.genres) genres.append(createElement('span', 'genre-tag', genre));
   const review = createElement('p', 'game-card__review', game.review || '暂无短评');
-  review.title = game.review || '暂无短评';
+  if (isAdminMode) review.title = game.review || '暂无短评';
   if (!game.review) review.classList.add('is-empty');
 
-  body.append(title, genres, review);
+  body.append(title, genres);
+  if (isAdminMode) {
+    body.append(review);
+  } else {
+    const preview = createElement('div', 'review-preview');
+    const more = createButton('⋯', 'review-more', 'read-review');
+    more.hidden = true;
+    more.setAttribute('aria-label', `阅读「${game.name}」的完整评论`);
+    more.setAttribute('aria-haspopup', 'dialog');
+    more.setAttribute('aria-controls', 'reviewDialog');
+    preview.append(review, more);
+    body.append(preview);
+  }
   if (isAdminMode) {
     const actions = createElement('div', 'game-card__actions');
     actions.append(
@@ -863,7 +883,17 @@ function bindEvents() {
 
   document.querySelector('#library').addEventListener('click', (event) => {
     const action = event.target.closest('[data-action]');
-    if (!action || !isAdminMode) return;
+    if (!action) return;
+    if (action.dataset.action === 'read-review') {
+      const game = state.games.find((item) => item.id === action.closest('[data-game-id]')?.dataset.gameId);
+      if (!game) return;
+      elements.reviewDialogTitle.textContent = game.name;
+      elements.reviewDialogText.textContent = game.review;
+      openDialog(elements.reviewDialog);
+      elements.reviewDialog.scrollTop = 0;
+      return;
+    }
+    if (!isAdminMode) return;
     if (action.dataset.action === 'open-import') openDialog(elements.steamImportDialog);
     const card = action.closest('[data-game-id]');
     if (!card) return;
